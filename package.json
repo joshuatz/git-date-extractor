@@ -1,0 +1,43 @@
+{
+	"name": "git-date-extractor",
+	"version": "0.0.0",
+	"description": "Easily extract file dates based on git history, and optionally cache in a easy to parse JSON file.",
+	"license": "MIT",
+	"repository": "joshuatz/git-date-extractor",
+	"author": {
+		"name": "Joshua Tzucker",
+		"email": "joshua.tz@gmail.com",
+		"url": "joshuatz.com"
+	},
+	"bin": "cli.js",
+	"engines": {
+		"node": ">=8"
+	},
+	"scripts": {
+		"test": "xo && nyc ava"
+	},
+	"files": [
+		"index.js",
+		"cli.js"
+	],
+	"keywords": [
+		"cli-app",
+		"cli",
+		""
+	],
+	"dependencies": {
+		"meow": "^5.0.0"
+	},
+	"devDependencies": {
+		"ava": "^2.1.0",
+		"codecov": "^3.5.0",
+		"nyc": "^14.1.1",
+		"xo": "^0.24.0"
+	},
+	"nyc": {
+		"reporter": [
+			"lcov",
+			"text"
+		]
+	}
+}
