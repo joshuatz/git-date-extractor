@@ -1,8 +1,14 @@
+// @ts-check
+'use strict';
+
+const path = require('path');
+
 module.exports = {
     /**
      * Normalizes and forces a filepath to the forward slash variant
      * Example: \dir\file.txt will become /dir/file.txt
      * @param {string} filePath the path to normalize
+     * @returns {string} The posix foward slashed version of the input
      */
     posixNormalize: function(filePath) {
         return path.normalize(filePath).replace(/[\/\\]{1,2}/gm, '/');
@@ -11,6 +17,7 @@ module.exports = {
      * Replaces any root level values on an object that are 0, with a different value
      * @param {object} inputObj  - The object to replace zeros on
      * @param {any} replacement - what to replace the zeros with
+     * @returns {object} The object with zeros replaced
      */
     replaceZeros: function(inputObj, replacement) {
         let keys = Object.keys(inputObj);
