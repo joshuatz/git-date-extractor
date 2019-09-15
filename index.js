@@ -20,170 +20,13 @@ let timestampsCache = require(timestampsCacheFilepath);
 // Flag - change to false if you want to track files outside of those directories in contentDirs
 const dontTrackOutsideContentDirs = true;
 
-// This should be filled later
-/**
- * @type Array<{localPath:string, fullPath: string}>
- */
-let filePaths = [];
-
-// Argument mapping to variables
-// 'pre' | 'post' | 'none'
-/**
- * @type {"pre" | "post" | "none" }
- */
-let gitCommitHook = 'none';
-let argMappings = {
-	'--commitAction': function (val) {
-		if (['pre', 'post', 'none'].indexOf(val) !== -1) {
-			gitCommitHook = val;
-		}
-	}
-}
-/**
- * Map strings to arguments and their procesor funcs
- * @param {string} val - the string to map to an argument
- * @returns {boolean} - whether or not the string was successfully mapped to an argument
- */
-function argMapper(val) {
-	let argRegRes = /(--[^=]+)=([^\s]+)/.exec(val);
-	if (argRegRes) {
-		let arg = argRegRes[1];
-		let argVal = argRegRes[2];
-		if (typeof (argMappings[arg]) === 'function') {
-			// Pass arg val to callback function
-			argMappings[arg](argVal);
-			return true;
-		}
-	}
-	return false;
-
-}
-
-/**
- * Get all the filepaths
- */
-let argsArr = process.argv.slice(2);
-if (argsArr.length > 0) {
-	for (let x = 0; x < argsArr.length; x++) {
-		/**
-		 * Assume that filepaths will be passed in args relative to project root.
-		 * So someone might pass "package.json", but that should map to {projectRootFullPath}/package.json
-		 * In the case of bash or git hook, first arg might be array containing filenames.
-		 */
-		let arg = argsArr[x];
-		let filePath = arg;
-		if (Array.isArray(filePath)) {
-			for (let r = 0; r < filePath.length; r++) {
-				arg = filePath[r];
-				let argFilePath = path.normalize(projectRootPath + arg);
-				argMapper(arg) ? null : pushFilePath(argFilePath, true);
-			}
-		}
-		else {
-			filePath = path.normalize(projectRootPath + filePath);
-			argMapper(arg) ? null : pushFilePath(filePath, true);
-		}
-	}
-}
-
-// If no files were passed in by arg, and this is not running on a git hook...
-if (filePaths.length === 0 && gitCommitHook.toString() === 'none') {
-	// Get *all* files contained within content dirs
-	for (let x = 0; x < contentDirs.length; x++) {
-		let fullContentDirPath = path.normalize(projectRootPath + contentDirs[x]);
-		let paths = walkdir.sync(contentDirs[x]);
-		for (let p = 0; p < paths.length; p++) {
-			pushFilePath(paths[p], false);
-		}
-	}
-}
-
-/**
- * 
- * @param {string} filePath - The path of the file
- * @param {boolean} [checkExists]  - If the func should check that the file actually exists before adding
- */
-function getShouldTrackFile(filePath, checkExists){
-	filePath = posixNormalize(filePath);
-	checkExists = typeof (checkExists) === "boolean" ? checkExists : false;
-	// Block tracking the actual timestamps file
-	if (filePath.indexOf(posixNormalize(timestampsCacheFilepath)) !== -1) {
-		return false;
-	}
-	if (dontTrackOutsideContentDirs) {
-		let found = false;
-		// Block tracking any files outside the indicated content dirs
-		for (let x = 0; x < contentDirs.length; x++) {
-			let fullContentDirPath = path.normalize(projectRootPath + contentDirs[x]);
-			if (filePath.indexOf(posixNormalize(fullContentDirPath)) !== -1) {
-				found = true;
-			}
-		}
-		if (!found && !/\/README.md$/.test(filePath)) {
-			// not in content dirs - block adding
-			return false;
-		}
-	}
-	if (fse.lstatSync(filePath).isDirectory() === true) {
-		return false;
-	}
-	if (checkExists) {
-		if (fse.existsSync(filePath) === false) {
-			return false;
-		}
-	}
-	return true;
-}
-
-/**
- * Add a file to the queue of file paths to retrieve dates for
- * @param {string} filePath  - The path of the file
- * @param {boolean} [checkExists]  - If the func should check that the file actually exists before adding
- */
-function pushFilePath(filePath, checkExists) {
-	if (getShouldTrackFile(filePath,checkExists)){
-		filePaths.push({
-			localPath: filePath.replace(projectRootPath, ''),
-			fullPath: filePath
-		});
-		return true;
-	}
-	return false;
-}
-
-/**
- * Now iterate through filepaths to get stamps
- */
-if (filePaths.length > 0) {
-	// Add line break
-	console.log('');
-}
-for (let f = 0; f < filePaths.length; f++) {
-	let currFullPath = filePaths[f].fullPath;
-	let currLocalPath = filePaths[f].localPath;
-	// Nice progress indicator in console
-	if (process.stdout && readline) {
-		readline.clearLine(process.stdout, 0);
-		readline.cursorTo(process.stdout, 0, null);
-		process.stdout.write(`Scraping Date info for file #${f + 1} / ${filePaths.length} ---> ${currLocalPath}`);
-		// If this is the last loop, close out the line with a newline
-		if (f === filePaths.length - 1) {
-			process.stdout.write('\n');
-		}
-	}
-	// Normalize path, force to posix style forward slash
-	currFullPath = posixNormalize(currFullPath);
-	// Update obj
-	timestampsCache[currLocalPath] = getTimestampsFromFile(currFullPath, currLocalPath, false);
-}
-
-updateTimestampsCacheFile(timestampsCache);
 
 /**
  * Updates the timestamp cache file and checks it into source control, depending on settings
  * @param {Object} jsonObj - The updated timestamps JSON to save to file
+ * @param {GitCommitHook} [gitCommitHook] - How this script is running
  */
-function updateTimestampsCacheFile(jsonObj){
+function updateTimestampsCacheFile(jsonObj, gitCommitHook){
 	/**
 	 * Save back updated timestamps to file
 	 */
@@ -203,21 +46,15 @@ function updateTimestampsCacheFile(jsonObj){
 	}
 }
 
-
-/**
- * @typedef {Object<string,number|boolean>} StampObject
- * @property {number | boolean} created - the stamp of when the file was created
- * @property {number | boolean} modified - the stamp of when the file was modified
- */
-
 /**
  * Get timestamps for a given file
  * @param {string} fullFilePath - The *full* file path to get stamps for
  * @param {string | null} cacheKey - What is the stamp currently stored under for this file?
  * @param {boolean} forceCreatedRefresh - If true, any existing created stamps in cache will be ignored, and re-calculated
+ * @param {GitCommitHook} [gitCommitHook]
  * @returns {StampObject}
  */
-function getTimestampsFromFile(fullFilePath, cacheKey, forceCreatedRefresh){
+function getTimestampsFromFile(fullFilePath, cacheKey, gitCommitHook, forceCreatedRefresh){
 	let ignoreCreatedCache = typeof(forceCreatedRefresh)==='boolean' ? forceCreatedRefresh : false;
 	// Lookup values in cache
 	let dateVals = timestampsCache[cacheKey];
@@ -280,10 +117,11 @@ module.exports = {
 /**
  * @typedef {Object<string, any>} Options
  * @property {boolean} outputToFile - Whether or not the timestamps should be saved to file
+ * @property {string} [outputFileName] - the filename to save the timestamps to
  * @property {string[]} files - Filenames to process
+ * @property {string[]} [onlyIn] - Only update for files in these directories
+ * @property {GitCommitHook} [gitCommitHook] - What triggered the execution
  */
-
-
 
 /**
  * @type Options
@@ -294,3 +132,130 @@ let optionDefaults = {
 }
 
 
+/**
+ * 
+ * @param {Options} optionsObj 
+ */
+function main(optionsObj){
+	// Load in cache if applicable
+	if (optionsObj.outputFileName && optionsObj.outputFileName.length > 0){
+		//
+	}
+	// Get filepaths
+	let filePaths = (new FilelistHandler(optionsObj)).filePaths;
+	/**
+	 * Now iterate through filepaths to get stamps
+	 */
+	if (filePaths.length > 0) {
+		// Add line break
+		console.log('');
+	}
+	for (let f = 0; f < filePaths.length; f++) {
+		let currFullPath = filePaths[f].fullPath;
+		let currLocalPath = filePaths[f].localPath;
+		// Nice progress indicator in console
+		if (process.stdout && readline) {
+			readline.clearLine(process.stdout, 0);
+			readline.cursorTo(process.stdout, 0, null);
+			process.stdout.write(`Scraping Date info for file #${f + 1} / ${filePaths.length} ---> ${currLocalPath}`);
+			// If this is the last loop, close out the line with a newline
+			if (f === filePaths.length - 1) {
+				process.stdout.write('\n');
+			}
+		}
+		// Normalize path, force to posix style forward slash
+		currFullPath = posixNormalize(currFullPath);
+		// Update obj
+		timestampsCache[currLocalPath] = getTimestampsFromFile(currFullPath, currLocalPath, optionsObj.gitCommitHook, false);
+	}
+	updateTimestampsCacheFile(timestampsCache);
+}
+
+
+
+
+
+
+
+
+let FilelistHandler = (function(){
+	/**
+	 * 
+	 * @param {Options} optionsObj 
+	 */
+	function FilelistHandlerInner(optionsObj){
+		/**
+		 * @type Array<{localPath:string, fullPath: string}>
+		 */
+		this.filePaths = [];
+		// Process input files
+		for (let x=0; x<optionsObj.files.length; x++){
+			let filePath = optionsObj.files[x];
+			filePath = path.normalize(projectRootPath + filePath);
+			this.pushFilePath(filePath, true);
+		}
+		// If no files were passed in by arg, and this is not running on a git hook...
+		if (this.filePaths.length === 0 && (!optionsObj.gitCommitHook || optionsObj.gitCommitHook.toString() === 'none')){
+			// Get *all* files contained within content dirs
+			for (let x = 0; x < contentDirs.length; x++) {
+				let fullContentDirPath = path.normalize(projectRootPath + contentDirs[x]);
+				let paths = walkdir.sync(contentDirs[x]);
+				for (let p = 0; p < paths.length; p++) {
+					this.pushFilePath(paths[p], false);
+				}
+			}
+		}
+	}
+	/**
+	 * Add a file to the queue of file paths to retrieve dates for
+	 * @param {string} filePath  - The path of the file
+	 * @param {boolean} [checkExists]  - If the func should check that the file actually exists before adding
+	 */
+	FilelistHandlerInner.prototype.pushFilePath = function(filePath,checkExists){
+		if (this.getShouldTrackFile(filePath,checkExists)){
+			this.filePaths.push({
+				localPath: filePath.replace(projectRootPath, ''),
+				fullPath: filePath
+			});
+			return true;
+		}
+		return false;
+	}
+	/**
+	 * 
+	 * @param {string} filePath - The path of the file
+	 * @param {boolean} [checkExists]  - If the func should check that the file actually exists before adding
+	 */
+	FilelistHandlerInner.prototype.getShouldTrackFile = function(filePath, checkExists){
+		filePath = posixNormalize(filePath);
+		checkExists = typeof (checkExists) === "boolean" ? checkExists : false;
+		// Block tracking the actual timestamps file
+		if (filePath.indexOf(posixNormalize(timestampsCacheFilepath)) !== -1) {
+			return false;
+		}
+		if (dontTrackOutsideContentDirs) {
+			let found = false;
+			// Block tracking any files outside the indicated content dirs
+			for (let x = 0; x < contentDirs.length; x++) {
+				let fullContentDirPath = path.normalize(projectRootPath + contentDirs[x]);
+				if (filePath.indexOf(posixNormalize(fullContentDirPath)) !== -1) {
+					found = true;
+				}
+			}
+			if (!found && !/\/README.md$/.test(filePath)) {
+				// not in content dirs - block adding
+				return false;
+			}
+		}
+		if (fse.lstatSync(filePath).isDirectory() === true) {
+			return false;
+		}
+		if (checkExists) {
+			if (fse.existsSync(filePath) === false) {
+				return false;
+			}
+		}
+		return true;
+	}
+	return FilelistHandlerInner;
+})();
