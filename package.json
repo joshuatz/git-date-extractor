@@ -7,7 +7,7 @@
 	"author": {
 		"name": "Joshua Tzucker",
 		"email": "joshua.tz@gmail.com",
-		"url": "joshuatz.com"
+		"url": "https://joshuatz.com"
 	},
 	"bin": "cli.js",
 	"engines": {
@@ -26,7 +26,9 @@
 		""
 	],
 	"dependencies": {
-		"meow": "^5.0.0"
+		"fs-extra": "^8.1.0",
+		"meow": "^5.0.0",
+		"walkdir": "^0.4.1"
 	},
 	"devDependencies": {
 		"ava": "^2.1.0",

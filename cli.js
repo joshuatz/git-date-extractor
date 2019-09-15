@@ -15,6 +15,13 @@ const cli = meow(`
 	  unicorns & rainbows
 	  $ git-date-extractor ponies
 	  ponies & rainbows
-`);
+`, {
+	flags: {
+		comitAction: {
+			type: 'string',
+			default: 'none'
+		}
+	}
+});
 
 console.log(gitDateExtractor(cli.input[0] || 'unicorns'));

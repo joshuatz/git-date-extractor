@@ -1,6 +1,8 @@
+// @ts-check
 'use strict';
 
-// @ts-check
+import {posixNormalize, replaceZeros} from './helpers';
+
 // Core Node
 const path = require('path');
 const readline = require('readline');
@@ -225,35 +227,7 @@ if (gitCommitHook.toString() === 'post') {
 	childProc.execSync(`git commit -m "AUTO: Updated ${timestampsCacheFilepath}"`);
 }
 
-
-/**
- * Helper functions
- */
-
-/**
- * Replaces any root level values on an object that are 0, with a different value
- * @param {object} inputObj  - The object to replace zeros on
- * @param {any} replacement - what to replace the zeros with
- */
-function replaceZeros(inputObj, replacement) {
-	let keys = Object.keys(inputObj);
-	for (let x = 0; x < keys.length; x++) {
-		if (inputObj[keys[x]] === 0) {
-			inputObj[keys[x]] = replacement;
-		}
-	}
-	return inputObj;
-}
-
-/**
- * Normalizes and forces a filepath to the forward slash variant
- * Example: \dir\file.txt will become /dir/file.txt
- * @param {string} filePath the path to normalize
- */
-function posixNormalize(filePath) {
-	return path.normalize(filePath).replace(/[\/\\]{1,2}/gm, '/');
-}
-
+/*
 module.exports = (input, { postfix = 'rainbows' } = {}) => {
 	if (typeof input !== 'string') {
 		throw new TypeError(`Expected a string, got ${typeof input}`);
@@ -261,3 +235,32 @@ module.exports = (input, { postfix = 'rainbows' } = {}) => {
 
 	return `${input} & ${postfix}`;
 };
+*/
+module.exports = {
+	/**
+	 * 
+	 * @param {Options} options 
+	 */
+	getStamps: function(options){
+		//
+	}
+}
+
+/**
+ * Options
+ */
+/**
+ * @typedef {Object<string, any>} Options
+ * @property {boolean} outputToFile - Whether or not the timestamps should be saved to file
+ * @property {string[]} files - Filenames to process
+ */
+
+
+
+/**
+ * @type Options
+ */
+let optionDefaults = {
+	outputToFile: true,
+	files: ['123'],
+}
