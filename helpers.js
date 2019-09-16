@@ -2,6 +2,7 @@
 'use strict';
 
 const path = require('path');
+const childProc = require('child_process');
 
 module.exports = {
     /**
@@ -27,5 +28,18 @@ module.exports = {
             }
         }
         return inputObj;
+    },
+    /**
+     * Test whether or not we are in a git initialized repo space / folder
+     * @returns {boolean} Whether or not in git repo
+     */
+    getIsInGitRepo: function(){
+        try {
+            childProc.execSync(`git status`);
+            return true;
+        }
+        catch (e){
+            return false;
+        }
     }
 }

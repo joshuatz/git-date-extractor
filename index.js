@@ -1,8 +1,9 @@
 // @ts-check
 'use strict';
 
-import {posixNormalize, replaceZeros} from './helpers';
+import {posixNormalize, replaceZeros, getIsInGitRepo} from './helpers';
 import FilelistHandler from './filelist-handler';
+import { get } from 'https';
 
 // Core Node
 const path = require('path');
@@ -124,6 +125,9 @@ module.exports = {
  * @param {Options} optionsObj 
  */
 function main(optionsObj){
+	if (!getIsInGitRepo()){
+		throw('Fatal Error: You are not in a git initialized project space! Please run git init.');
+	}
 	/**
 	 * @type StampCache
 	 */

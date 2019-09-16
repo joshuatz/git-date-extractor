@@ -1,6 +1,8 @@
+// @ts-check
 import test from 'ava';
-import gitDateExtractor from '.';
+// import gitDateExtractor from '../';
 
+/*
 test('title', t => {
 	t.throws(() => {
 		gitDateExtractor(123);
@@ -11,3 +13,4 @@ test('title', t => {
 
 	t.is(gitDateExtractor('unicorns'), 'unicorns & rainbows');
 });
+*/
