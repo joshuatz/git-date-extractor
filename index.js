@@ -24,19 +24,19 @@ const dontTrackOutsideContentDirs = true;
 
 
 /**
- * Updates the timestamp cache file and checks it into source control, depending on settings
- * @param {string} cacheFilePath - the path of the files to save the cache out to
- * @param {Object} jsonObj - The updated timestamps JSON to save to file
- * @param {GitCommitHook} [gitCommitHook] - How this script is running
- */
+* Updates the timestamp cache file and checks it into source control, depending on settings
+* @param {string} cacheFilePath - the path of the files to save the cache out to
+* @param {Object} jsonObj - The updated timestamps JSON to save to file
+* @param {GitCommitHook} [gitCommitHook] - How this script is running
+*/
 function updateTimestampsCacheFile(cacheFilePath, jsonObj, gitCommitHook){
 	/**
-	 * Save back updated timestamps to file
-	 */
+	* Save back updated timestamps to file
+	*/
 	fse.writeFileSync(cacheFilePath, JSON.stringify(jsonObj, null, 2));
 	/**
-	 * Since the timestamps file should be checked into source control, and we just modified it, re-add to commit and amend
-	 */
+	* Since the timestamps file should be checked into source control, and we just modified it, re-add to commit and amend
+	*/
 	if (gitCommitHook.toString() === 'pre' || gitCommitHook.toString() === 'post') {
 		// Stage the changed file
 		childProc.execSync(`git add ${cacheFilePath}`);
@@ -50,29 +50,29 @@ function updateTimestampsCacheFile(cacheFilePath, jsonObj, gitCommitHook){
 }
 
 /**
- * Get timestamps for a given file
- * @param {string} fullFilePath - The *full* file path to get stamps for
- * @param {string} [cacheKey] - What is the stamp currently stored under for this file?
- * @param {StampCache} [cache] - Object with key/pair values corresponding to valid stamps
- * @param {boolean} forceCreatedRefresh - If true, any existing created stamps in cache will be ignored, and re-calculated
- * @param {GitCommitHook} [gitCommitHook]
- * @returns {StampObject}
- */
+* Get timestamps for a given file
+* @param {string} fullFilePath - The *full* file path to get stamps for
+* @param {string} [cacheKey] - What is the stamp currently stored under for this file?
+* @param {StampCache} [cache] - Object with key/pair values corresponding to valid stamps
+* @param {boolean} forceCreatedRefresh - If true, any existing created stamps in cache will be ignored, and re-calculated
+* @param {GitCommitHook} [gitCommitHook]
+* @returns {StampObject}
+*/
 function getTimestampsFromFile(fullFilePath, cache, cacheKey, gitCommitHook, forceCreatedRefresh){
 	let ignoreCreatedCache = typeof(forceCreatedRefresh)==='boolean' ? forceCreatedRefresh : false;
 	let timestampsCache = typeof(cache)==='object' ? cache : {};
 	// Lookup values in cache
 	/**
-	 * @type {StampObject}
-	 */
+	* @type {StampObject}
+	*/
 	let dateVals = timestampsCache[cacheKey];
 	dateVals = typeof (dateVals) === 'object' ? dateVals : {};
 	try {
 		if (!dateVals.created || ignoreCreatedCache){
 			// Get the created stamp by looking through log and following history
 			/**
-			 * @type {any}
-			 */
+			* @type {any}
+			*/
 			let createdStamp = childProc.execSync(`git log --pretty=format:%at -- "${fullFilePath}" | tail -n 1`).toString();
 			createdStamp = Number(createdStamp);
 			if (Number.isNaN(createdStamp) === true && gitCommitHook.toString() !== 'post') {
@@ -111,9 +111,9 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, gitCommitHook, for
 
 module.exports = {
 	/**
-	 * 
-	 * @param {Options} options 
-	 */
+	*
+	* @param {Options} options
+	*/
 	getStamps: function(options){
 		//
 	},
@@ -121,16 +121,16 @@ module.exports = {
 }
 
 /**
- * 
- * @param {Options} optionsObj 
- */
+*
+* @param {Options} optionsObj
+*/
 function main(optionsObj){
 	if (!getIsInGitRepo()){
 		throw('Fatal Error: You are not in a git initialized project space! Please run git init.');
 	}
 	/**
-	 * @type StampCache
-	 */
+	* @type StampCache
+	*/
 	let timestampsCache = {};
 	let readCacheFile = typeof(optionsObj.outputFileName)==='string' && optionsObj.outputFileName.length > 0;
 	let writeCacheFile = readCacheFile && optionsObj.outputToFile;
@@ -151,8 +151,8 @@ function main(optionsObj){
 	// Get filepaths
 	let filePaths = (new FilelistHandler(optionsObj)).filePaths;
 	/**
-	 * Now iterate through filepaths to get stamps
-	 */
+	* Now iterate through filepaths to get stamps
+	*/
 	if (filePaths.length > 0) {
 		// Add line break
 		console.log('');
