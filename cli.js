@@ -17,6 +17,10 @@ const cli = meow(`
 	  ponies & rainbows
 `, {
 	flags: {
+		outputToFile: {
+			type: 'boolean',
+			default: true
+		},
 		comitAction: {
 			type: 'string',
 			default: 'none'

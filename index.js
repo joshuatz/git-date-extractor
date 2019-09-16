@@ -115,29 +115,9 @@ module.exports = {
 	 */
 	getStamps: function(options){
 		//
-	}
+	},
+	projectRootPath
 }
-
-/**
- * Options
- */
-/**
- * @typedef {Object<string, any>} Options
- * @property {boolean} outputToFile - Whether or not the timestamps should be saved to file
- * @property {string} [outputFileName] - the filename to save the timestamps to
- * @property {string[]} files - Filenames to process
- * @property {string[]} [onlyIn] - Only update for files in these directories
- * @property {GitCommitHook} [gitCommitHook] - What triggered the execution
- */
-
-/**
- * @type Options
- */
-let optionDefaults = {
-	outputToFile: true,
-	files: ['123'],
-}
-
 
 /**
  * 
@@ -148,9 +128,21 @@ function main(optionsObj){
 	 * @type StampCache
 	 */
 	let timestampsCache = {};
+	let readCacheFile = typeof(optionsObj.outputFileName)==='string' && optionsObj.outputFileName.length > 0;
+	let writeCacheFile = readCacheFile && optionsObj.outputToFile;
 	// Load in cache if applicable
-	if (optionsObj.outputFileName && optionsObj.outputFileName.length > 0){
-		//
+	if (readCacheFile){
+		if (!fse.existsSync(optionsObj.outputFileName)){
+			fse.writeFileSync(optionsObj.outputFileName,'{}');
+		}
+		else {
+			try {
+				timestampsCache = JSON.parse(fse.readFileSync(optionsObj.outputFileName).toString());
+			}
+			catch (e){
+				console.warn(`Could not read in cache file @ ${optionsObj.outputFileName}`)
+			}
+		}
 	}
 	// Get filepaths
 	let filePaths = (new FilelistHandler(optionsObj)).filePaths;
@@ -179,7 +171,7 @@ function main(optionsObj){
 		// Update obj
 		timestampsCache[currLocalPath] = getTimestampsFromFile(currFullPath, timestampsCache, currLocalPath, optionsObj.gitCommitHook, false);
 	}
-	if (optionsObj.outputToFile && optionsObj.outputFileName.toString().length > 0){
+	if (writeCacheFile){
 		updateTimestampsCacheFile(optionsObj.outputFileName, timestampsCache);
 	}
 }
