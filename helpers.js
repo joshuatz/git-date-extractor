@@ -33,9 +33,16 @@ module.exports = {
 	* Test whether or not we are in a git initialized repo space / folder
 	* @returns {boolean} Whether or not in git repo
 	*/
-	getIsInGitRepo: function(){
+	getIsInGitRepo: function(OPT_folder){
+		let executeInPath = __dirname;
+		console.log(executeInPath);
+		if (typeof(OPT_folder)==='string'){
+			executeInPath = path.normalize(OPT_folder);
+		}
 		try {
-			childProc.execSync(`git status`);
+			childProc.execSync(`git status`, {
+				cwd: executeInPath
+			});
 			return true;
 		}
 		catch (e){
