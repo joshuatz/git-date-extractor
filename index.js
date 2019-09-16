@@ -2,6 +2,7 @@
 'use strict';
 
 import {posixNormalize, replaceZeros} from './helpers';
+import FilelistHandler from './filelist-handler';
 
 // Core Node
 const path = require('path');
@@ -14,51 +15,57 @@ const walkdir = require('walkdir');
 const contentDirs = ['images', 'md'];
 const projectRootPath = posixNormalize(path.normalize(posixNormalize(__dirname + '../../../')));
 
-const timestampsCacheFilepath = path.normalize(projectRootPath + 'timestamps-cache.json');
+//const timestampsCacheFilepath = path.normalize(projectRootPath + 'timestamps-cache.json');
 // The main timestamp cache file
-let timestampsCache = require(timestampsCacheFilepath);
+//let timestampsCache = require(timestampsCacheFilepath);
 // Flag - change to false if you want to track files outside of those directories in contentDirs
 const dontTrackOutsideContentDirs = true;
 
 
 /**
  * Updates the timestamp cache file and checks it into source control, depending on settings
+ * @param {string} cacheFilePath - the path of the files to save the cache out to
  * @param {Object} jsonObj - The updated timestamps JSON to save to file
  * @param {GitCommitHook} [gitCommitHook] - How this script is running
  */
-function updateTimestampsCacheFile(jsonObj, gitCommitHook){
+function updateTimestampsCacheFile(cacheFilePath, jsonObj, gitCommitHook){
 	/**
 	 * Save back updated timestamps to file
 	 */
-	fse.writeFileSync(timestampsCacheFilepath, JSON.stringify(jsonObj, null, 2));
+	fse.writeFileSync(cacheFilePath, JSON.stringify(jsonObj, null, 2));
 	/**
 	 * Since the timestamps file should be checked into source control, and we just modified it, re-add to commit and amend
 	 */
 	if (gitCommitHook.toString() === 'pre' || gitCommitHook.toString() === 'post') {
 		// Stage the changed file
-		childProc.execSync(`git add ${timestampsCacheFilepath}`);
+		childProc.execSync(`git add ${cacheFilePath}`);
 	}
 	if (gitCommitHook.toString() === 'post') {
 		// Since the commit has already happened, we need to re-stage the changed timestamps file, and then commit it as a new commit
 		// WARNING: We cannot use git commit --amend because that will trigger an endless loop if this file is triggered on a git post-commit loop!
 		// Although the below will trigger the post-commit hook again, the loop should be blocked by the filepath checker at the top of the script that excludes the timestamp JSON file from being tracked
-		childProc.execSync(`git commit -m "AUTO: Updated ${timestampsCacheFilepath}"`);
+		childProc.execSync(`git commit -m "AUTO: Updated ${cacheFilePath}"`);
 	}
 }
 
 /**
  * Get timestamps for a given file
  * @param {string} fullFilePath - The *full* file path to get stamps for
- * @param {string | null} cacheKey - What is the stamp currently stored under for this file?
+ * @param {string} [cacheKey] - What is the stamp currently stored under for this file?
+ * @param {StampCache} [cache] - Object with key/pair values corresponding to valid stamps
  * @param {boolean} forceCreatedRefresh - If true, any existing created stamps in cache will be ignored, and re-calculated
  * @param {GitCommitHook} [gitCommitHook]
  * @returns {StampObject}
  */
-function getTimestampsFromFile(fullFilePath, cacheKey, gitCommitHook, forceCreatedRefresh){
+function getTimestampsFromFile(fullFilePath, cache, cacheKey, gitCommitHook, forceCreatedRefresh){
 	let ignoreCreatedCache = typeof(forceCreatedRefresh)==='boolean' ? forceCreatedRefresh : false;
+	let timestampsCache = typeof(cache)==='object' ? cache : {};
 	// Lookup values in cache
+	/**
+	 * @type {StampObject}
+	 */
 	let dateVals = timestampsCache[cacheKey];
-	dateVals = dateVals && typeof (dateVals) === 'object' ? dateVals : {};
+	dateVals = typeof (dateVals) === 'object' ? dateVals : {};
 	try {
 		if (!dateVals.created || ignoreCreatedCache){
 			// Get the created stamp by looking through log and following history
@@ -137,6 +144,10 @@ let optionDefaults = {
  * @param {Options} optionsObj 
  */
 function main(optionsObj){
+	/**
+	 * @type StampCache
+	 */
+	let timestampsCache = {};
 	// Load in cache if applicable
 	if (optionsObj.outputFileName && optionsObj.outputFileName.length > 0){
 		//
@@ -166,96 +177,9 @@ function main(optionsObj){
 		// Normalize path, force to posix style forward slash
 		currFullPath = posixNormalize(currFullPath);
 		// Update obj
-		timestampsCache[currLocalPath] = getTimestampsFromFile(currFullPath, currLocalPath, optionsObj.gitCommitHook, false);
+		timestampsCache[currLocalPath] = getTimestampsFromFile(currFullPath, timestampsCache, currLocalPath, optionsObj.gitCommitHook, false);
 	}
-	updateTimestampsCacheFile(timestampsCache);
+	if (optionsObj.outputToFile && optionsObj.outputFileName.toString().length > 0){
+		updateTimestampsCacheFile(optionsObj.outputFileName, timestampsCache);
+	}
 }
-
-
-
-
-
-
-
-
-let FilelistHandler = (function(){
-	/**
-	 * 
-	 * @param {Options} optionsObj 
-	 */
-	function FilelistHandlerInner(optionsObj){
-		/**
-		 * @type Array<{localPath:string, fullPath: string}>
-		 */
-		this.filePaths = [];
-		// Process input files
-		for (let x=0; x<optionsObj.files.length; x++){
-			let filePath = optionsObj.files[x];
-			filePath = path.normalize(projectRootPath + filePath);
-			this.pushFilePath(filePath, true);
-		}
-		// If no files were passed in by arg, and this is not running on a git hook...
-		if (this.filePaths.length === 0 && (!optionsObj.gitCommitHook || optionsObj.gitCommitHook.toString() === 'none')){
-			// Get *all* files contained within content dirs
-			for (let x = 0; x < contentDirs.length; x++) {
-				let fullContentDirPath = path.normalize(projectRootPath + contentDirs[x]);
-				let paths = walkdir.sync(contentDirs[x]);
-				for (let p = 0; p < paths.length; p++) {
-					this.pushFilePath(paths[p], false);
-				}
-			}
-		}
-	}
-	/**
-	 * Add a file to the queue of file paths to retrieve dates for
-	 * @param {string} filePath  - The path of the file
-	 * @param {boolean} [checkExists]  - If the func should check that the file actually exists before adding
-	 */
-	FilelistHandlerInner.prototype.pushFilePath = function(filePath,checkExists){
-		if (this.getShouldTrackFile(filePath,checkExists)){
-			this.filePaths.push({
-				localPath: filePath.replace(projectRootPath, ''),
-				fullPath: filePath
-			});
-			return true;
-		}
-		return false;
-	}
-	/**
-	 * 
-	 * @param {string} filePath - The path of the file
-	 * @param {boolean} [checkExists]  - If the func should check that the file actually exists before adding
-	 */
-	FilelistHandlerInner.prototype.getShouldTrackFile = function(filePath, checkExists){
-		filePath = posixNormalize(filePath);
-		checkExists = typeof (checkExists) === "boolean" ? checkExists : false;
-		// Block tracking the actual timestamps file
-		if (filePath.indexOf(posixNormalize(timestampsCacheFilepath)) !== -1) {
-			return false;
-		}
-		if (dontTrackOutsideContentDirs) {
-			let found = false;
-			// Block tracking any files outside the indicated content dirs
-			for (let x = 0; x < contentDirs.length; x++) {
-				let fullContentDirPath = path.normalize(projectRootPath + contentDirs[x]);
-				if (filePath.indexOf(posixNormalize(fullContentDirPath)) !== -1) {
-					found = true;
-				}
-			}
-			if (!found && !/\/README.md$/.test(filePath)) {
-				// not in content dirs - block adding
-				return false;
-			}
-		}
-		if (fse.lstatSync(filePath).isDirectory() === true) {
-			return false;
-		}
-		if (checkExists) {
-			if (fse.existsSync(filePath) === false) {
-				return false;
-			}
-		}
-		return true;
-	}
-	return FilelistHandlerInner;
-})();

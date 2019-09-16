@@ -2,7 +2,11 @@ type GitCommitHook = "pre" | "post" | "none" | null | undefined;
 
 interface StampObject {
     // the stamp of when the file was created
-    "created": number | boolean,
+    "created"?: number | boolean,
     // the stamp of when the file was modified
-    "modified": number | boolean
+    "modified"?: number | boolean
+}
+
+interface StampCache {
+    [index:string]: StampObject
 }
