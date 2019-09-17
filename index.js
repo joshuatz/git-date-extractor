@@ -1,15 +1,34 @@
 // @ts-check
 'use strict';
 
-import {posixNormalize, replaceZeros, getIsInGitRepo} from './helpers';
-const { updateTimestampsCacheFile, getTimestampsFromFile } = require('./cachefile-handler');
-import FilelistHandler from './filelist-handler';
+const {posixNormalize, replaceZeros, getIsInGitRepo, projectRootPath} = require('./helpers');
+const { updateTimestampsCacheFile, getTimestampsFromFile } = require('./stamp-handler');
+const FilelistHandler = require('./filelist-handler');
 
 // Core Node
 const readline = require('readline');
 const childProc = require('child_process');
 // Extras
 const fse = require('fs-extra');
+
+/**
+ *
+ * @param {Options} optionsObj
+ */
+function validateOptions(optionsObj){
+	/**
+	 * Fill in some defaults
+	 */
+	if (optionsObj.outputToFile){
+		if (typeof(optionsObj.outputFileName)!=='string' || optionsObj.outputFileName.length === 0){
+			optionsObj.outputFileName = 'timestamps.json';
+		}
+	}
+	if (typeof(optionsObj.projectRootPath)!=='string' || optionsObj.projectRootPath.length === 0){
+		optionsObj.projectRootPath = projectRootPath;
+	}
+	return optionsObj;
+}
 
 /**
 *
@@ -19,6 +38,7 @@ function main(optionsObj){
 	if (!getIsInGitRepo()){
 		throw('Fatal Error: You are not in a git initialized project space! Please run git init.');
 	}
+	optionsObj = validateOptions(optionsObj);
 	/**
 	* @type StampCache
 	*/
@@ -63,11 +83,12 @@ function main(optionsObj){
 		}
 		// Normalize path, force to posix style forward slash
 		currFullPath = posixNormalize(currFullPath);
+		currLocalPath = posixNormalize(currLocalPath);
 		// Update obj
 		timestampsCache[currLocalPath] = getTimestampsFromFile(currFullPath, timestampsCache, currLocalPath, optionsObj.gitCommitHook, false);
 	}
 	if (writeCacheFile){
-		updateTimestampsCacheFile(optionsObj.outputFileName, timestampsCache);
+		updateTimestampsCacheFile(optionsObj.outputFileName, timestampsCache, optionsObj);
 	}
 	return timestampsCache;
 }

@@ -24,5 +24,18 @@ interface Options {
     // Block certain files from being tracked
     blockFiles?: string[],
     // What triggered the execution
-    gitCommitHook: GitCommitHook
+	gitCommitHook: GitCommitHook,
+	// Project root
+	projectRootPath?: string
+}
+
+interface FinalizedOptions {
+    outputToFile: boolean,
+	outputFileName?: string,
+	outputFileGitAdd?: boolean,
+    files: string[],
+    onlyIn?: string[],
+    blockFiles?: string[],
+	gitCommitHook: GitCommitHook,
+	projectRootPath?: string
 }

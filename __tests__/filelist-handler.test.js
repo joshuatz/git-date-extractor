@@ -6,7 +6,7 @@ const fse = require('fs-extra');
 const path = require('path');
 
 // Set up some paths for testing
-const tempDirName = 'tempdir';
+const tempDirName = 'tempdir-filehandler';
 const tempDirPath = __dirname + '/' + tempDirName
 const tempSubDirName = 'subdir';
 

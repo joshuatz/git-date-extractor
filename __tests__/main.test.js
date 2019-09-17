@@ -1,18 +1,17 @@
 // @ts-check
 import test from 'ava';
-// import gitDateExtractor from '../';
+const main = require('../');
 
-/*
-test('title', t => {
-	t.throws(() => {
-		gitDateExtractor(123);
-	}, {
-		instanceOf: TypeError,
-		message: 'Expected a string, got number'
-	});
+/**
+ * This is really a full integration test
+ */
+test('main - integration test', t=> {
+	/**
+	 * @type {Options}
+	 */
+	const options = {
 
-	t.is(gitDateExtractor('unicorns'), 'unicorns & rainbows');
+	}
 });
-*/
 
-test.todo('Add tests');
+

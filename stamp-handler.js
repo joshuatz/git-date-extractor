@@ -2,15 +2,18 @@
 
 const childProc = require('child_process');
 const fse = require('fs-extra');
-const { replaceZeros } = require('./helpers');
+const { replaceZeros, projectRootPath } = require('./helpers');
 
 /**
 * Updates the timestamp cache file and checks it into source control, depending on settings
 * @param {string} cacheFilePath - the path of the files to save the cache out to
 * @param {Object} jsonObj - The updated timestamps JSON to save to file
-* @param {GitCommitHook} [gitCommitHook] - How this script is running
+* @param {Options} optionsObj - Options
 */
-function updateTimestampsCacheFile(cacheFilePath, jsonObj, gitCommitHook){
+function updateTimestampsCacheFile(cacheFilePath, jsonObj, optionsObj){
+	const shouldGitAdd = typeof(optionsObj.outputFileGitAdd)==='boolean' ? optionsObj.outputFileGitAdd : true;
+	const gitDir = typeof(optionsObj.projectRootPath)==='string' ? optionsObj.projectRootPath : projectRootPath;
+	const gitCommitHook = optionsObj.gitCommitHook;
 	/**
 	* Save back updated timestamps to file
 	*/
@@ -18,15 +21,21 @@ function updateTimestampsCacheFile(cacheFilePath, jsonObj, gitCommitHook){
 	/**
 	* Since the timestamps file should be checked into source control, and we just modified it, re-add to commit and amend
 	*/
-	if (gitCommitHook.toString() === 'pre' || gitCommitHook.toString() === 'post') {
-		// Stage the changed file
-		childProc.execSync(`git add ${cacheFilePath}`);
-	}
-	if (gitCommitHook.toString() === 'post') {
-		// Since the commit has already happened, we need to re-stage the changed timestamps file, and then commit it as a new commit
-		// WARNING: We cannot use git commit --amend because that will trigger an endless loop if this file is triggered on a git post-commit loop!
-		// Although the below will trigger the post-commit hook again, the loop should be blocked by the filepath checker at the top of the script that excludes the timestamp JSON file from being tracked
-		childProc.execSync(`git commit -m "AUTO: Updated ${cacheFilePath}"`);
+	if (shouldGitAdd){
+		if (gitCommitHook.toString() === 'pre' || gitCommitHook.toString() === 'post') {
+			// Stage the changed file
+			childProc.execSync(`git add ${cacheFilePath}`,{
+				cwd: gitDir
+			});
+		}
+		if (gitCommitHook.toString() === 'post') {
+			// Since the commit has already happened, we need to re-stage the changed timestamps file, and then commit it as a new commit
+			// WARNING: We cannot use git commit --amend because that will trigger an endless loop if this file is triggered on a git post-commit loop!
+			// Although the below will trigger the post-commit hook again, the loop should be blocked by the filepath checker at the top of the script that excludes the timestamp JSON file from being tracked
+			childProc.execSync(`git commit -m "AUTO: Updated ${cacheFilePath}"`,{
+				cwd: gitDir
+			});
+		}
 	}
 }
 

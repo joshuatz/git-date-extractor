@@ -4,4 +4,4 @@ yarn.lock
 coverage
 scratchpad.js
 gittest
-tempdir
+__tests__/tempdir-*
