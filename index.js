@@ -109,16 +109,7 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, gitCommitHook, for
 	return dateVals;
 }
 
-module.exports = {
-	/**
-	*
-	* @param {Options} options
-	*/
-	getStamps: function(options){
-		//
-	},
-	projectRootPath
-}
+
 
 /**
 *
@@ -179,3 +170,16 @@ function main(optionsObj){
 		updateTimestampsCacheFile(optionsObj.outputFileName, timestampsCache);
 	}
 }
+
+
+
+module.exports = {
+	/**
+	*
+	* @param {Options} options
+	*/
+	getStamps: function(options){
+		//
+	},
+	projectRootPath
+};

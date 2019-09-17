@@ -3,9 +3,7 @@
 const fse = require('fs-extra');
 const path = require('path');
 const walkdir = require('walkdir');
-// @ts-ignore
-import { projectRootPath } from './index';
-import { posixNormalize } from './helpers';
+const { posixNormalize, projectRootPath, projectRootPathTrailingSlash, getIsRelativePath } = require('./helpers');
 
 let FilelistHandler = (function(){
 	/**
@@ -33,7 +31,7 @@ let FilelistHandler = (function(){
 		if (this.filePaths.length === 0 && (!optionsObj.gitCommitHook || optionsObj.gitCommitHook.toString() === 'none')){
 			// Get *all* files contained within content dirs
 			for (let x = 0; x < this.contentDirs.length; x++) {
-				let fullContentDirPath = path.normalize(projectRootPath + this.contentDirs[x]);
+				let fullContentDirPath = getIsRelativePath(this.contentDirs[x]) ? path.normalize(projectRootPath + this.contentDirs[x]) : this.contentDirs[x];
 				let paths = walkdir.sync(this.contentDirs[x]);
 				for (let p = 0; p < paths.length; p++) {
 					this.pushFilePath(paths[p], false);
@@ -72,9 +70,13 @@ let FilelistHandler = (function(){
 			let found = false;
 			// Block tracking any files outside the indicated content dirs
 			for (let x = 0; x < this.contentDirs.length; x++) {
-				let fullContentDirPath = path.normalize(projectRootPath + this.contentDirs[x]);
+				let fullContentDirPath = path.normalize(projectRootPathTrailingSlash + this.contentDirs[x]);
 				if (filePath.indexOf(posixNormalize(fullContentDirPath)) !== -1) {
 					found = true;
+				}
+				else {
+					console.log(posixNormalize(fullContentDirPath));
+					console.log(filePath);
 				}
 			}
 			if (!found) {
@@ -99,4 +101,4 @@ let FilelistHandler = (function(){
 	return FilelistHandlerInner;
 })();
 
-export default FilelistHandler;
+module.exports = FilelistHandler;

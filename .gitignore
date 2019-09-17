@@ -3,4 +3,5 @@ yarn.lock
 .nyc_output
 coverage
 scratchpad.js
-__tests__/gittest
+gittest
+tempdir

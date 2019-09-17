@@ -1,7 +1,6 @@
 // @ts-check
 import test from 'ava';
 import * as helpers from '../helpers';
-import fse from 'fs-extra';
 /**
 * Helpers testing
 */
