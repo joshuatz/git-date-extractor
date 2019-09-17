@@ -150,7 +150,7 @@ function main(optionsObj){
 	}
 	for (let f = 0; f < filePaths.length; f++) {
 		let currFullPath = filePaths[f].fullPath;
-		let currLocalPath = filePaths[f].localPath;
+		let currLocalPath = filePaths[f].relativeToProjRoot;
 		// Nice progress indicator in console
 		if (process.stdout && readline) {
 			readline.clearLine(process.stdout, 0);

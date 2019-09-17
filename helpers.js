@@ -14,6 +14,33 @@ const posixNormalize = function(filePath) {
 	return path.normalize(filePath).replace(/[\/\\]{1,2}/gm, '/');
 }
 
+
+/**
+ * Run a replacer function over an object to modify it
+ * @param {object} inputObj - the object to replace values in
+ * @param {function} replacerFunc - cb func to take value, modify, and return it
+ */
+function replaceInObj(inputObj, replacerFunc){
+	let outputObj = {};
+	for (let x=0; x<Object.keys(inputObj).length; x++){
+		let key = Object.keys(inputObj)[x];
+		let val = inputObj[Object.keys(inputObj)[x]];
+		if (Array.isArray(val)){
+			for (let y=0; y<val.length; y++){
+				val[y] = replacerFunc(val[y]);
+			}
+		}
+		else if (val && typeof(val)==='object'){
+			val = replaceInObj(val,replacerFunc);
+		}
+		else {
+			val = replacerFunc(val);
+		}
+		outputObj[key] = val;
+	}
+	return outputObj;
+}
+
 const isInNodeModules = function(){
 	const parentFolderPath = path.normalize(__dirname + '/../');
 	if (path.basename(parentFolderPath)==='node_modules'){
@@ -23,7 +50,6 @@ const isInNodeModules = function(){
 }
 
 // @todo this is probably going to need to be revised
-// const projectRootPath = posixNormalize(path.normalize(posixNormalize(__dirname + '../../../')));
 const projectRootPath = isInNodeModules() ? posixNormalize(path.normalize(`${__dirname}/../..`)) : posixNormalize(`${__dirname}`);
 const projectRootPathTrailingSlash = projectRootPath + '/';
 
@@ -50,7 +76,6 @@ module.exports = {
 	*/
 	getIsInGitRepo: function(OPT_folder){
 		let executeInPath = __dirname;
-		console.log(executeInPath);
 		if (typeof(OPT_folder)==='string'){
 			executeInPath = path.normalize(OPT_folder);
 		}
@@ -64,6 +89,7 @@ module.exports = {
 			return false;
 		}
 	},
+	replaceInObj,
 	projectRootPath,
 	projectRootPathTrailingSlash,
 	getIsRelativePath: function(filePath){

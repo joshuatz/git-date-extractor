@@ -13,26 +13,29 @@ let FilelistHandler = (function(){
 	function FilelistHandlerInner(optionsObj){
 		this.inputOptions = optionsObj;
 		/**
-		* @type Array<{localPath:string, fullPath: string}>
+		* @type Array<{relativeToProjRoot:string, fullPath: string}>
 		*/
 		this.filePaths = [];
 		// Parse filter options
 		this.contentDirs = Array.isArray(this.inputOptions.onlyIn) ? this.inputOptions.onlyIn : [projectRootPath];
+		this.fullPathContentDirs = this.contentDirs.map(function(pathStr){
+			return path.normalize(getIsRelativePath(pathStr) ? (projectRootPathTrailingSlash + pathStr) : pathStr);
+		});
 		this.restrictByDir = Array.isArray(this.inputOptions.onlyIn) && this.inputOptions.onlyIn.length > 0;
 		this.usesCache = typeof(optionsObj.outputFileName)==='string';
 		this.usesBlockFiles = Array.isArray(optionsObj.blockFiles) && optionsObj.blockFiles.length > 0;
 		// Process input files
 		for (let x=0; x<optionsObj.files.length; x++){
 			let filePath = optionsObj.files[x];
-			filePath = path.normalize(projectRootPath + filePath);
+			filePath = path.normalize(getIsRelativePath(filePath) ? (projectRootPathTrailingSlash + filePath) : filePath);
 			this.pushFilePath(filePath, true);
 		}
 		// If no files were passed in by arg, and this is not running on a git hook...
 		if (this.filePaths.length === 0 && (!optionsObj.gitCommitHook || optionsObj.gitCommitHook.toString() === 'none')){
 			// Get *all* files contained within content dirs
-			for (let x = 0; x < this.contentDirs.length; x++) {
-				let fullContentDirPath = getIsRelativePath(this.contentDirs[x]) ? path.normalize(projectRootPath + this.contentDirs[x]) : this.contentDirs[x];
-				let paths = walkdir.sync(this.contentDirs[x]);
+			for (let x = 0; x < this.fullPathContentDirs.length; x++) {
+				let fullContentDirPath = this.fullPathContentDirs[x];
+				let paths = walkdir.sync(fullContentDirPath);
 				for (let p = 0; p < paths.length; p++) {
 					this.pushFilePath(paths[p], false);
 				}
@@ -47,7 +50,7 @@ let FilelistHandler = (function(){
 	FilelistHandlerInner.prototype.pushFilePath = function(filePath,checkExists){
 		if (this.getShouldTrackFile(filePath,checkExists)){
 			this.filePaths.push({
-				localPath: filePath.replace(projectRootPath, ''),
+				relativeToProjRoot: path.normalize(filePath).replace(path.normalize(projectRootPathTrailingSlash), ''),
 				fullPath: filePath
 			});
 			return true;
@@ -69,14 +72,10 @@ let FilelistHandler = (function(){
 		if (this.restrictByDir) {
 			let found = false;
 			// Block tracking any files outside the indicated content dirs
-			for (let x = 0; x < this.contentDirs.length; x++) {
-				let fullContentDirPath = path.normalize(projectRootPathTrailingSlash + this.contentDirs[x]);
+			for (let x = 0; x < this.fullPathContentDirs.length; x++) {
+				let fullContentDirPath = this.fullPathContentDirs[x];
 				if (filePath.indexOf(posixNormalize(fullContentDirPath)) !== -1) {
 					found = true;
-				}
-				else {
-					console.log(posixNormalize(fullContentDirPath));
-					console.log(filePath);
 				}
 			}
 			if (!found) {

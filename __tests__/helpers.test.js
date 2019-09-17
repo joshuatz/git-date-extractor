@@ -28,10 +28,45 @@ test('replaceZeros', t=>{
 		}
 	});
 });
+
 test('git folder check', async t=>{
 	// The entire test will fail if the overall project is not git-inited
 	// First test the working directory
 	t.assert(helpers.getIsInGitRepo());
 	// Then go to hdd root and test there (should probably not be a git repo haha)
 	t.falsy(helpers.getIsInGitRepo('/'));
+});
+
+test('replaceInObj', t => {
+	const inputObj = {
+		alpha: 2,
+		bravo: 'BRAVO',
+		nested: {
+			charlie: 4,
+			nested: {
+				echo: 'ECHO',
+				delta: 6
+			}
+		}
+	};
+	const replacer = function(input){
+		if (typeof(input)==='string'){
+			return input.toLowerCase();
+		}
+		else {
+			return input * 2;
+		}
+	}
+	const expected = {
+		alpha: 4,
+		bravo: 'bravo',
+		nested: {
+			charlie: 8,
+			nested: {
+				echo: 'echo',
+				delta: 12
+			}
+		}
+	}
+	t.deepEqual(helpers.replaceInObj(inputObj,replacer),expected);
 });
