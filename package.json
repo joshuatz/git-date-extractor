@@ -15,7 +15,8 @@
 	},
 	"scripts": {
 		"test": "xo && nyc ava",
-		"test-nolint": "ava"
+		"lint": "xo",
+		"test-nolint": "nyc ava"
 	},
 	"files": [
 		"index.js",

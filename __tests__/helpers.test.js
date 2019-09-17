@@ -41,6 +41,7 @@ test('replaceInObj', t => {
 	const inputObj = {
 		alpha: 2,
 		bravo: 'BRAVO',
+		arr: ['ARRAY_TEST'],
 		nested: {
 			charlie: 4,
 			nested: {
@@ -60,6 +61,7 @@ test('replaceInObj', t => {
 	const expected = {
 		alpha: 4,
 		bravo: 'bravo',
+		arr: ['array_test'],
 		nested: {
 			charlie: 8,
 			nested: {
@@ -69,4 +71,9 @@ test('replaceInObj', t => {
 		}
 	}
 	t.deepEqual(helpers.replaceInObj(inputObj,replacer),expected);
+});
+
+test('isInNodeModules', t=>{
+	t.false(helpers.isInNodeModules());
+	t.true(helpers.isInNodeModules('/node_modules/test/test.txt'));
 });

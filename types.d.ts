@@ -14,7 +14,9 @@ interface Options {
     // Whether or not the timestamps should be saved to file
     outputToFile: boolean,
     // the filename to save the timestamps to
-    outputFileName?: string,
+	outputFileName?: string,
+	// If the output file should automatically be check-in with git add
+	outputFileGitAdd?: boolean,
     // Filenames to process
     files: string[],
     // Only update for files in these directories

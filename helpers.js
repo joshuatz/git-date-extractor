@@ -41,10 +41,16 @@ function replaceInObj(inputObj, replacerFunc){
 	return outputObj;
 }
 
-const isInNodeModules = function(){
-	const parentFolderPath = path.normalize(__dirname + '/../');
-	if (path.basename(parentFolderPath)==='node_modules'){
-		return true;
+const isInNodeModules = function(OPT_path){
+	if (typeof(OPT_path)==='string'){
+		return /node_modules\//.test(OPT_path);
+	}
+	else {
+		const parentFolderPath = path.normalize(__dirname + '/../');
+		/* istanbul ignore if */
+		if (path.basename(parentFolderPath)==='node_modules'){
+			return true;
+		}
 	}
 	return false;
 }
