@@ -1,3 +1,4 @@
+/// <reference path="../types.d.ts"/>
 // @ts-check
 import test from 'ava';
 const FilelistHandler = require('../filelist-handler');
@@ -9,6 +10,7 @@ const path = require('path');
 const tempDirName = 'tempdir-filehandler';
 const tempDirPath = __dirname + '/' + tempDirName
 const tempSubDirName = 'subdir';
+const tempSubDirPath = `${tempDirPath}/${tempSubDirName}`;
 
 const testFiles = {
 	alpha: `${tempDirPath}/alpha.txt`,
@@ -29,7 +31,7 @@ test.before(t => {
 	fse.ensureFileSync(testFiles.alpha);
 	fse.ensureFileSync(testFiles.bravo);
 	fse.ensureFileSync(testFiles.charlie);
-	fse.ensureDirSync(`${tempDirPath}/${tempSubDirName}`);
+	fse.ensureDirSync(tempSubDirPath);
 	fse.ensureFileSync(testFiles.subdir.delta);
 	fse.ensureFileSync(testFiles.subdir.echo);
 });
@@ -39,7 +41,7 @@ test('Restricting files by directory', t => {
 	 * @type {InputOptions}
 	 */
 	const dummyOptions = {
-		onlyIn: [`${tempDirPath}/${tempSubDirName}`],
+		onlyIn: [tempSubDirPath],
 		files: [],
 		gitCommitHook: 'none',
 		outputToFile: false
@@ -64,7 +66,8 @@ test('Restricting files by filter list', t => {
 	 */
 	const dummyOptions = {
 		onlyIn: [],
-		files: [testFiles.alpha, testFiles.subdir.delta, testFilesRelative.subdir.echo],
+		files: [testFiles.alpha, testFiles.bravo, testFiles.subdir.delta, testFilesRelative.subdir.echo],
+		blockFiles: ['bravo.txt'],
 		gitCommitHook: 'none',
 		outputToFile: false
 	};

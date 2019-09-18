@@ -73,6 +73,7 @@ let FilelistHandler = (function(){
 				}
 			}
 		}
+		/* istanbul ignore if */
 		if (optionsObj.debug){
 			console.log(this.filePaths);
 		}
@@ -99,6 +100,7 @@ let FilelistHandler = (function(){
 	*/
 	FilelistHandlerInner.prototype.getShouldTrackFile = function(filePath, checkExists){
 		filePath = posixNormalize(filePath);
+		const fileName = path.basename(filePath);
 		checkExists = typeof (checkExists) === "boolean" ? checkExists : false;
 		// Block tracking the actual timestamps file
 		if (this.usesCache && filePath.indexOf(posixNormalize(this.inputOptions.outputFileName)) !== -1) {
@@ -120,9 +122,10 @@ let FilelistHandler = (function(){
 			}
 		}
 		// Block tracking any on blacklist
-		if (this.usesBlockFiles && this.inputOptions.blockFiles.indexOf(filePath)!==-1){
+		if (this.usesBlockFiles && this.inputOptions.blockFiles.indexOf(fileName)!==-1){
 			return false;
 		}
+		/* istanbul ignore if */
 		if (fse.lstatSync(filePath).isDirectory() === true) {
 			return false;
 		}

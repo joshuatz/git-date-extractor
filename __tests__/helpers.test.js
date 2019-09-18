@@ -102,3 +102,7 @@ test('Option validator', t=> {
 		debug: false
 	});
 });
+
+test('Null destination', t => {
+	t.true(['NUL','/dev/null'].indexOf(helpers.getNullDestination())!==-1);
+});

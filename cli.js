@@ -7,6 +7,7 @@ const { validateOptions } = require('./helpers');
 const cli = meow(`
 	Usage
 	  $ git-date-extractor [input]
+	  $ git-dates [input]
 
 	Options (all are optional):
 	  --outputToFile {boolean} [Default: false]

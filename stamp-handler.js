@@ -2,7 +2,7 @@
 
 const childProc = require('child_process');
 const fse = require('fs-extra');
-const { replaceZeros, getIsInGitRepo } = require('./helpers');
+const { replaceZeros, getIsInGitRepo, getIsValidStampVal } = require('./helpers');
 
 /**
 * Updates the timestamp cache file and checks it into source control, depending on settings
@@ -62,7 +62,10 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 	* @type {StampObject}
 	*/
 	let dateVals = timestampsCache[cacheKey];
-	dateVals = typeof (dateVals) === 'object' ? dateVals : {};
+	dateVals = typeof (dateVals) === 'object' ? dateVals : {
+		created: 0,
+		modified: 0
+	};
 	try {
 		if (!dateVals.created || ignoreCreatedCache){
 			// Get the created stamp by looking through log and following history
@@ -71,9 +74,10 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 			*/
 			let createdStamp = childProc.execSync(`git log --pretty=format:%at -- "${fullFilePath}" | tail -n 1`,execOptions).toString();
 			createdStamp = Number(createdStamp);
-			if (Number.isNaN(createdStamp) === true && gitCommitHook.toString() !== 'post') {
+			if (!getIsValidStampVal(createdStamp) && gitCommitHook.toString() !== 'post') {
 				// During pre-commit, a file could be being added for the first time, so it wouldn't show up in the git log. We'll fall back to OS stats here
 				createdStamp = Math.floor(fse.lstatSync(fullFilePath).birthtimeMs / 1000);
+				console.log('asdfadsflkjaslkfjsafd')
 			}
 			if (Number.isNaN(createdStamp) === false) {
 				dateVals.created = createdStamp;
@@ -85,12 +89,12 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 			// If this is running after the commit that modified the file, we can use git log to pull the modified time out
 			modifiedStamp = childProc.execSync(`git log --pretty=format:%at --follow -- "${fullFilePath}" | sort | tail -n 1`,execOptions).toString();
 		}
-		if (gitCommitHook === 'pre' || modifiedStamp === '' || Number.isNaN(Number(modifiedStamp))) {
+		modifiedStamp = Number(modifiedStamp);
+		if (gitCommitHook === 'pre' || !getIsValidStampVal(modifiedStamp)) {
 			// If this is running before the changed files have actually be commited, they either won't show up in the git log, or the modified time in the log will be from one commit ago, not the current
 			// Pull modified time from file itself
 			modifiedStamp = Math.floor(fse.lstatSync(fullFilePath).mtimeMs / 1000);
 		}
-		modifiedStamp = Number(modifiedStamp);
 		if (Number.isNaN(modifiedStamp) === false) {
 			dateVals.modified = modifiedStamp;
 		}
@@ -99,7 +103,9 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 		dateVals = replaceZeros(dateVals, Math.floor((new Date()).getTime() / 1000));
 	}
 	catch (e){
+		/* istanbul ignore next */
 		console.log(`getting git dates failed for ${fullFilePath}`);
+		/* istanbul ignore next */
 		console.error(e);
 	}
 	return dateVals;

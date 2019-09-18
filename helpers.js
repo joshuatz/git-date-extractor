@@ -82,6 +82,7 @@ function _validateOptions(input){
 		moddedOptions.files = [];
 	}
 	// Debug - only allow for dev, and allow override
+	/* istanbul ignore if */
 	if (typeof(moddedOptions.debug)==='boolean'){
 		if (moddedOptions.debug === true && /.+\/laragon\/.+\/git-date-extractor.*/.test(posixNormalize(__dirname))){
 			moddedOptions.debug = true;
@@ -179,9 +180,21 @@ const isInNodeModules = function(OPT_path){
 	return false;
 }
 
+/**
+ * Check if a value is a valid stamp value
+ * @param {any} stampInt
+ */
+function getIsValidStampVal(stampInt){
+	if (typeof(stampInt)!=='number' || stampInt <= 0){
+		return false;
+	}
+	return true;
+}
+
 // @todo this is probably going to need to be revised
 let projectRootPath = isInNodeModules() ? posixNormalize(path.normalize(`${__dirname}/../..`)) : posixNormalize(`${__dirname}`);
 const callerDir = posixNormalize(process.cwd());
+/* istanbul ignore if */
 if (projectRootPath.indexOf(callerDir)===-1){
 	// This shouldn't be the case
 	projectRootPath = callerDir;
@@ -234,5 +247,6 @@ module.exports = {
 	validateOptions,
 	extractArrFromStr,
 	getNullDestination,
-	nullDestination
+	nullDestination,
+	getIsValidStampVal
 }
