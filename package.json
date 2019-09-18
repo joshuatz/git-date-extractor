@@ -9,7 +9,10 @@
 		"email": "joshua.tz@gmail.com",
 		"url": "https://joshuatz.com"
 	},
-	"bin": "cli.js",
+	"bin": {
+		"git-date-extractor": "cli.js",
+		"git-dates": "cli.js"
+	},
 	"engines": {
 		"node": ">=8"
 	},

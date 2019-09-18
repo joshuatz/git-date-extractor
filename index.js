@@ -1,7 +1,7 @@
 // @ts-check
 'use strict';
 
-const {posixNormalize, replaceZeros, getIsInGitRepo, projectRootPath} = require('./helpers');
+const {posixNormalize, replaceZeros, getIsInGitRepo, projectRootPath, validateOptions} = require('./helpers');
 const { updateTimestampsCacheFile, getTimestampsFromFile } = require('./stamp-handler');
 const FilelistHandler = require('./filelist-handler');
 
@@ -12,33 +12,14 @@ const childProc = require('child_process');
 const fse = require('fs-extra');
 
 /**
- *
- * @param {Options} optionsObj
- */
-function validateOptions(optionsObj){
-	/**
-	 * Fill in some defaults
-	 */
-	if (optionsObj.outputToFile){
-		if (typeof(optionsObj.outputFileName)!=='string' || optionsObj.outputFileName.length === 0){
-			optionsObj.outputFileName = 'timestamps.json';
-		}
-	}
-	if (typeof(optionsObj.projectRootPath)!=='string' || optionsObj.projectRootPath.length === 0){
-		optionsObj.projectRootPath = projectRootPath;
-	}
-	return optionsObj;
-}
-
-/**
 *
-* @param {Options} optionsObj
+* @param {InputOptions} options
 */
-function main(optionsObj){
+function main(options){
 	if (!getIsInGitRepo()){
 		throw('Fatal Error: You are not in a git initialized project space! Please run git init.');
 	}
-	optionsObj = validateOptions(optionsObj);
+	let optionsObj = validateOptions(options);
 	/**
 	* @type StampCache
 	*/
@@ -98,7 +79,7 @@ function main(optionsObj){
 module.exports = {
 	/**
 	*
-	* @param {Options} options
+	* @param {InputOptions} options
 	*/
 	getStamps: function(options){
 		return main(options);

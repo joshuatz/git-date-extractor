@@ -14,6 +14,86 @@ const posixNormalize = function(filePath) {
 	return path.normalize(filePath).replace(/[\/\\]{1,2}/gm, '/');
 }
 
+/**
+ * Extract an array from a stringified array
+ * @param {string} str - input string
+ */
+function extractArrFromStr(str){
+	let arr = [];
+	if (typeof(str)==='string'){
+		// Test for input string resembling array
+		// "[alpha.txt, bravo.js]"
+		if (/^\[(.+)\]/.exec(str)){
+			// Extract arr
+			arr = /^\[(.+)\]/.exec(str)[1].split(',').map(e=>e.trim())
+		}
+		else {
+			// single file - e.g. "alpha.txt"
+			arr.push(str);
+		}
+	}
+	return arr;
+}
+
+
+function _validateOptions(input){
+	let moddedOptions = JSON.parse(JSON.stringify(input));
+	/**
+	 * Fill in some defaults and check for invalid combos
+	 */
+	if (typeof(moddedOptions.outputToFile)!=='boolean'){
+		moddedOptions.outputToFile = false;
+	}
+	if (moddedOptions.outputToFile){
+		if (typeof(moddedOptions.outputFileName)!=='string' || moddedOptions.outputFileName.length === 0){
+			moddedOptions.outputFileName = 'timestamps.json';
+		}
+	}
+	if (typeof(moddedOptions.projectRootPath)!=='string' || moddedOptions.projectRootPath.length === 0){
+		moddedOptions.projectRootPath = projectRootPath;
+	}
+	// Reset invalid git commit hook selection
+	if (typeof(moddedOptions.gitCommitHook)==='string' && ['pre','post','none'].indexOf(moddedOptions.gitCommitHook)===-1){
+		moddedOptions.gitCommitHook = 'none';
+	}
+	// Force single file passed to array
+	if (typeof(moddedOptions.files)==='string'){
+		moddedOptions.files = extractArrFromStr(moddedOptions.files);
+	}
+	if (typeof(moddedOptions.blockFiles)==='string'){
+		moddedOptions.blockFiles = extractArrFromStr(moddedOptions.blockFiles);
+	}
+	// Force to array
+	if (!Array.isArray(moddedOptions.files)){
+		// Reminder: An empty files array means that all files within the project space will be scanned!
+		moddedOptions.files = [];
+	}
+	return moddedOptions;
+}
+
+/**
+ *
+ * @param {InputOptions} input
+ * @returns {FinalizedOptions}
+ */
+function validateOptions(input){
+	let moddedOptions = _validateOptions(input);
+	/**
+	 * @type {FinalizedOptions}
+	 */
+	let finalOptions = {
+		outputToFile: moddedOptions.outputToFile,
+		outputFileName: moddedOptions.outputFileName,
+		outputFileGitAdd: moddedOptions.outputFileGitAdd,
+		files: moddedOptions.files,
+		onlyIn: moddedOptions.onlyIn,
+		blockFiles: moddedOptions.blockFiles,
+		gitCommitHook: moddedOptions.gitCommitHook,
+		projectRootPath: moddedOptions.projectRootPath
+	};
+	return finalOptions;
+}
+
 
 /**
  * Run a replacer function over an object to modify it
@@ -41,6 +121,10 @@ function replaceInObj(inputObj, replacerFunc){
 	return outputObj;
 }
 
+/**
+ * Are we in a subdirectory of the node_modules folder?
+ * @param {string} [OPT_path] - Optional path to use as check dir
+ */
 const isInNodeModules = function(OPT_path){
 	if (typeof(OPT_path)==='string'){
 		return /node_modules\//.test(OPT_path);
@@ -56,7 +140,12 @@ const isInNodeModules = function(OPT_path){
 }
 
 // @todo this is probably going to need to be revised
-const projectRootPath = isInNodeModules() ? posixNormalize(path.normalize(`${__dirname}/../..`)) : posixNormalize(`${__dirname}`);
+let projectRootPath = isInNodeModules() ? posixNormalize(path.normalize(`${__dirname}/../..`)) : posixNormalize(`${__dirname}`);
+const callerDir = posixNormalize(process.cwd());
+if (projectRootPath.indexOf(callerDir)===-1){
+	// This shouldn't be the case
+	projectRootPath = callerDir;
+}
 const projectRootPathTrailingSlash = projectRootPath + '/';
 
 module.exports = {
@@ -101,5 +190,7 @@ module.exports = {
 	getIsRelativePath: function(filePath){
 		return !path.isAbsolute(filePath);
 	},
-	isInNodeModules
+	isInNodeModules,
+	validateOptions,
+	extractArrFromStr
 }

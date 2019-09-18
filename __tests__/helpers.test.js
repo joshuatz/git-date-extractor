@@ -77,3 +77,26 @@ test('isInNodeModules', t=>{
 	t.false(helpers.isInNodeModules());
 	t.true(helpers.isInNodeModules('/node_modules/test/test.txt'));
 });
+
+test('Option validator', t=> {
+	/**
+	 * @type {InputOptions}
+	 */
+	const dummyOptions = {
+		files: '[alpha.txt, bravo.txt]',
+		blockFiles: 'charlie.js',
+		//@ts-ignore
+		gitCommitHook: 'invalid'
+	}
+	const actual = helpers.validateOptions(dummyOptions);
+	t.deepEqual(actual,{
+		outputToFile: false,
+		outputFileName: undefined,
+		outputFileGitAdd: undefined,
+		files: ['alpha.txt','bravo.txt'],
+		onlyIn: undefined,
+		blockFiles: ['charlie.js'],
+		gitCommitHook: 'none',
+		projectRootPath: helpers.projectRootPath
+	});
+});

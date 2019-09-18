@@ -10,21 +10,21 @@ interface StampObject {
 interface StampCache {
     [index:string]: StampObject
 }
-interface Options {
+interface InputOptions {
     // Whether or not the timestamps should be saved to file
-    outputToFile: boolean,
+    outputToFile?: boolean,
     // the filename to save the timestamps to
 	outputFileName?: string,
 	// If the output file should automatically be check-in with git add
 	outputFileGitAdd?: boolean,
     // Filenames to process
-    files: string[],
+    files?: string[] | string,
     // Only update for files in these directories
     onlyIn?: string[],
     // Block certain files from being tracked
-    blockFiles?: string[],
+    blockFiles?: string[] | string,
     // What triggered the execution
-	gitCommitHook: GitCommitHook,
+	gitCommitHook?: GitCommitHook,
 	// Project root
 	projectRootPath?: string
 }

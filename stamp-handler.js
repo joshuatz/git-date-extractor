@@ -8,7 +8,7 @@ const { replaceZeros, projectRootPath } = require('./helpers');
 * Updates the timestamp cache file and checks it into source control, depending on settings
 * @param {string} cacheFilePath - the path of the files to save the cache out to
 * @param {Object} jsonObj - The updated timestamps JSON to save to file
-* @param {Options} optionsObj - Options
+* @param {FinalizedOptions} optionsObj - Options
 */
 function updateTimestampsCacheFile(cacheFilePath, jsonObj, optionsObj){
 	const shouldGitAdd = typeof(optionsObj.outputFileGitAdd)==='boolean' ? optionsObj.outputFileGitAdd : true;

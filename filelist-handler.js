@@ -6,9 +6,17 @@ const walkdir = require('walkdir');
 const { posixNormalize, projectRootPath, projectRootPathTrailingSlash, getIsRelativePath } = require('./helpers');
 
 let FilelistHandler = (function(){
+	const internalDirBlockList = [
+		'node_modules',
+		'.git'
+	];
+	const internalFileBlockPatterns = [
+		// .__ files
+		/^\..+$/,
+	]
 	/**
 	*
-	* @param {Options} optionsObj
+	* @param {FinalizedOptions} optionsObj
 	*/
 	function FilelistHandlerInner(optionsObj){
 		this.inputOptions = optionsObj;
@@ -35,9 +43,32 @@ let FilelistHandler = (function(){
 			// Get *all* files contained within content dirs
 			for (let x = 0; x < this.fullPathContentDirs.length; x++) {
 				let fullContentDirPath = this.fullPathContentDirs[x];
-				let paths = walkdir.sync(fullContentDirPath);
+				let paths = walkdir.sync(fullContentDirPath,function(pathStr,stat){
+					const pathDirName = path.basename(pathStr);
+					// Check internal block list of directories
+					if (internalDirBlockList.indexOf(pathDirName)!==-1){
+						this.ignore(pathStr);
+					}
+					// Block all .___ directories
+					else if (/^\..*$/.test(pathDirName)){
+						this.ignore(pathStr);
+					}
+					// Block all __tests__ and similar
+					else if (/^__[^_]+__$/.test(pathDirName)){
+						this.ignore(pathStr);
+					}
+				});
 				for (let p = 0; p < paths.length; p++) {
-					this.pushFilePath(paths[p], false);
+					let blocked = false;
+					for (let b=0; b<internalFileBlockPatterns.length; b++){
+						if (internalFileBlockPatterns[b].test(paths[p])){
+							blocked = true;
+							break;
+						}
+					}
+					if (!blocked){
+						this.pushFilePath(paths[p], false);
+					}
 				}
 			}
 		}

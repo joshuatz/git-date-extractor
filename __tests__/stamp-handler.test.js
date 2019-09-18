@@ -3,6 +3,7 @@ import test from 'ava';
 const fse = require('fs-extra');
 const stHandler = require('../stamp-handler');
 const childProc = require('child_process');
+const { validateOptions } = require('../helpers');
 
 // Set up some paths for testing
 const tempDirName = 'tempdir-stamphandler';
@@ -36,7 +37,7 @@ test('save cache file', t => {
 		}
 	};
 	/**
-	 * @type {Options}
+	 * @type {InputOptions}
 	 */
 	const dummyOptions = {
 		files: [],
@@ -44,7 +45,7 @@ test('save cache file', t => {
 		projectRootPath: tempDirPath,
 		outputToFile: true
 	}
-	stHandler.updateTimestampsCacheFile(cacheFilePath,cacheObj,dummyOptions);
+	stHandler.updateTimestampsCacheFile(cacheFilePath,cacheObj,validateOptions(dummyOptions));
 	// Now read back the file and check
 	const saved = JSON.parse(fse.readFileSync(cacheFilePath).toString());
 	t.deepEqual(cacheObj,saved);
