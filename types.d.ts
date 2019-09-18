@@ -20,7 +20,7 @@ interface InputOptions {
     // Filenames to process
     files?: string[] | string,
     // Only update for files in these directories
-    onlyIn?: string[],
+    onlyIn?: string[] | string,
     // Block certain files from being tracked
     blockFiles?: string[] | string,
     // What triggered the execution

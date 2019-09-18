@@ -70,6 +70,9 @@ function _validateOptions(input){
 	if (typeof(moddedOptions.files)==='string'){
 		moddedOptions.files = extractArrFromStr(moddedOptions.files);
 	}
+	if (typeof(moddedOptions.onlyIn)==='string'){
+		moddedOptions.onlyIn = extractArrFromStr(moddedOptions.onlyIn);
+	}
 	if (typeof(moddedOptions.blockFiles)==='string'){
 		moddedOptions.blockFiles = extractArrFromStr(moddedOptions.blockFiles);
 	}

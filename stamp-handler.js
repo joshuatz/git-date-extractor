@@ -2,7 +2,7 @@
 
 const childProc = require('child_process');
 const fse = require('fs-extra');
-const { replaceZeros, projectRootPath } = require('./helpers');
+const { replaceZeros, getIsInGitRepo } = require('./helpers');
 
 /**
 * Updates the timestamp cache file and checks it into source control, depending on settings
@@ -21,13 +21,11 @@ function updateTimestampsCacheFile(cacheFilePath, jsonObj, optionsObj){
 	/**
 	* Since the timestamps file should be checked into source control, and we just modified it, re-add to commit and amend
 	*/
-	if (shouldGitAdd){
-		if (gitCommitHook.toString() === 'pre' || gitCommitHook.toString() === 'post') {
-			// Stage the changed file
-			childProc.execSync(`git add ${cacheFilePath}`,{
-				cwd: gitDir
-			});
-		}
+	if (shouldGitAdd && getIsInGitRepo(gitDir)){
+		// Stage the changed file
+		childProc.execSync(`git add ${cacheFilePath}`,{
+			cwd: gitDir
+		});
 		if (gitCommitHook.toString() === 'post') {
 			// Since the commit has already happened, we need to re-stage the changed timestamps file, and then commit it as a new commit
 			// WARNING: We cannot use git commit --amend because that will trigger an endless loop if this file is triggered on a git post-commit loop!
@@ -87,7 +85,7 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 			// If this is running after the commit that modified the file, we can use git log to pull the modified time out
 			modifiedStamp = childProc.execSync(`git log --pretty=format:%at --follow -- "${fullFilePath}" | sort | tail -n 1`,execOptions).toString();
 		}
-		else if (gitCommitHook === 'pre') {
+		if (gitCommitHook === 'pre' || modifiedStamp === '' || Number.isNaN(Number(modifiedStamp))) {
 			// If this is running before the changed files have actually be commited, they either won't show up in the git log, or the modified time in the log will be from one commit ago, not the current
 			// Pull modified time from file itself
 			modifiedStamp = Math.floor(fse.lstatSync(fullFilePath).mtimeMs / 1000);

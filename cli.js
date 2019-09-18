@@ -54,7 +54,7 @@ const cli = meow(`
 		projectRootPath: {
 			type: 'string',
 			default: undefined,
-			alias: 'root'
+			alias: 'rootDir'
 		}
 	}
 });

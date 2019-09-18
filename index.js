@@ -16,10 +16,12 @@ const fse = require('fs-extra');
 * @param {InputOptions} options
 */
 function main(options){
+	/* istanbul ignore if */
 	if (!getIsInGitRepo()){
 		throw('Fatal Error: You are not in a git initialized project space! Please run git init.');
 	}
 	let optionsObj = validateOptions(options);
+	/* istanbul ignore if */
 	if (optionsObj.debug){
 		console.log(optionsObj);
 	}
@@ -72,9 +74,6 @@ function main(options){
 		timestampsCache[currLocalPath] = getTimestampsFromFile(currFullPath, timestampsCache, currLocalPath, optionsObj, false);
 	}
 	if (writeCacheFile){
-		if (optionsObj.debug){
-			console.log(`Writing out cache file - to ${optionsObj.outputFileName}`);
-		}
 		updateTimestampsCacheFile(optionsObj.outputFileName, timestampsCache, optionsObj);
 	}
 	return timestampsCache;
