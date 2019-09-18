@@ -60,8 +60,9 @@ let FilelistHandler = (function(){
 				});
 				for (let p = 0; p < paths.length; p++) {
 					let blocked = false;
+					const fileOrDirName = path.basename(paths[p]);
 					for (let b=0; b<internalFileBlockPatterns.length; b++){
-						if (internalFileBlockPatterns[b].test(paths[p])){
+						if (internalFileBlockPatterns[b].test(fileOrDirName)){
 							blocked = true;
 							break;
 						}

@@ -30,7 +30,7 @@ function updateTimestampsCacheFile(cacheFilePath, jsonObj, optionsObj){
 			// Since the commit has already happened, we need to re-stage the changed timestamps file, and then commit it as a new commit
 			// WARNING: We cannot use git commit --amend because that will trigger an endless loop if this file is triggered on a git post-commit loop!
 			// Although the below will trigger the post-commit hook again, the loop should be blocked by the filepath checker at the top of the script that excludes the timestamp JSON file from being tracked
-			childProc.execSync(`git commit -m "AUTO: Updated ${cacheFilePath}"`,{
+			childProc.execSync(`git commit -m "AUTO: Updated ${optionsObj.outputFileName}"`,{
 				cwd: gitDir
 			});
 		}

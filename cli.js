@@ -8,14 +8,25 @@ const cli = meow(`
 	Usage
 	  $ git-date-extractor [input]
 
-	Options
-	  --foo  Lorem ipsum [Default: false]
+	Options (all are optional):
+	  --outputToFile {boolean} [Default: false]
+	  --outputFileName {string} [Default: timestamps.json]
+	  --outputFileGitAdd {boolean} [Default: true]
+	  --files {string[] | string}
+	  --onlyIn {string[] | string}
+	  --blockFiles {string[] | string}
+	  --gitCommitHook {"post" | "pre" | "none"}
+	  --projectRootPath {string}
 
 	Examples
 	  $ git-date-extractor
-	  unicorns & rainbows
-	  $ git-date-extractor ponies
-	  ponies & rainbows
+	  {
+		'alpha.txt': { created: 1568789925, modified: 1568790468 },
+		'bravo.txt': { created: 1568789925, modified: 1568790468 },
+		'subdir/charlie.txt': { created: 1568789925, modified: 1568790368 }
+	  }
+	  $ git-date-extractor --files=[alpha.txt] --outputFileGitAdd=true --gitCommitHook=post
+	  timestamps updated
 `, {
 	flags: {
 		outputToFile: {
@@ -71,5 +82,6 @@ if (!finalizedOptions.outputToFile){
 	console.log(result);
 }
 else {
-	console.log('timestamps updated');
+	let msg = 'timestamps file updated';
+	console.log(msg);
 }
