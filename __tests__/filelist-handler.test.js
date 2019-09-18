@@ -1,7 +1,7 @@
 // @ts-check
 import test from 'ava';
 const FilelistHandler = require('../filelist-handler');
-const {projectRootPath, projectRootPathTrailingSlash, replaceInObj} = require('../helpers');
+const {projectRootPath, projectRootPathTrailingSlash, replaceInObj, validateOptions} = require('../helpers');
 const fse = require('fs-extra');
 const path = require('path');
 
@@ -35,12 +35,16 @@ test.before(t => {
 });
 
 test('Restricting files by directory', t => {
-	const instance = new FilelistHandler({
+	/**
+	 * @type {InputOptions}
+	 */
+	const dummyOptions = {
 		onlyIn: [`${tempDirPath}/${tempSubDirName}`],
 		files: [],
 		gitCommitHook: 'none',
 		outputToFile: false
-	});
+	}
+	const instance = new FilelistHandler(validateOptions(dummyOptions));
 	const expected = [
 		{
 			fullPath: path.normalize(testFiles.subdir.delta),
@@ -55,12 +59,16 @@ test('Restricting files by directory', t => {
 });
 
 test('Restricting files by filter list', t => {
-	const instance = new FilelistHandler({
+	/**
+	 * @type {InputOptions}
+	 */
+	const dummyOptions = {
 		onlyIn: [],
 		files: [testFiles.alpha, testFiles.subdir.delta, testFilesRelative.subdir.echo],
 		gitCommitHook: 'none',
 		outputToFile: false
-	});
+	};
+	const instance = new FilelistHandler(validateOptions(dummyOptions));
 	const expected = [
 		{
 			fullPath: path.normalize(testFiles.alpha),

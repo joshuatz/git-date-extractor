@@ -20,6 +20,9 @@ function main(options){
 		throw('Fatal Error: You are not in a git initialized project space! Please run git init.');
 	}
 	let optionsObj = validateOptions(options);
+	if (optionsObj.debug){
+		console.log(optionsObj);
+	}
 	/**
 	* @type StampCache
 	*/
@@ -66,9 +69,12 @@ function main(options){
 		currFullPath = posixNormalize(currFullPath);
 		currLocalPath = posixNormalize(currLocalPath);
 		// Update obj
-		timestampsCache[currLocalPath] = getTimestampsFromFile(currFullPath, timestampsCache, currLocalPath, optionsObj.gitCommitHook, false);
+		timestampsCache[currLocalPath] = getTimestampsFromFile(currFullPath, timestampsCache, currLocalPath, optionsObj, false);
 	}
 	if (writeCacheFile){
+		if (optionsObj.debug){
+			console.log(`Writing out cache file - to ${optionsObj.outputFileName}`);
+		}
 		updateTimestampsCacheFile(optionsObj.outputFileName, timestampsCache, optionsObj);
 	}
 	return timestampsCache;

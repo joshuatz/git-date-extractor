@@ -37,7 +37,9 @@ interface FinalizedOptions {
     onlyIn?: string[],
     blockFiles?: string[],
 	gitCommitHook: GitCommitHook,
-	projectRootPath?: string
+	projectRootPath: string,
+	projectRootPathTrailingSlash: string,
+	debug: boolean
 }
 
 // Dummy interface to get around weird VSCode issue not picking up type def file

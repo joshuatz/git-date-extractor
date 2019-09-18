@@ -3,7 +3,7 @@
 const fse = require('fs-extra');
 const path = require('path');
 const walkdir = require('walkdir');
-const { posixNormalize, projectRootPath, projectRootPathTrailingSlash, getIsRelativePath } = require('./helpers');
+const { posixNormalize, getIsRelativePath } = require('./helpers');
 
 let FilelistHandler = (function(){
 	const internalDirBlockList = [
@@ -25,9 +25,9 @@ let FilelistHandler = (function(){
 		*/
 		this.filePaths = [];
 		// Parse filter options
-		this.contentDirs = Array.isArray(this.inputOptions.onlyIn) ? this.inputOptions.onlyIn : [projectRootPath];
+		this.contentDirs = Array.isArray(this.inputOptions.onlyIn) ? this.inputOptions.onlyIn : [optionsObj.projectRootPath];
 		this.fullPathContentDirs = this.contentDirs.map(function(pathStr){
-			return path.normalize(getIsRelativePath(pathStr) ? (projectRootPathTrailingSlash + pathStr) : pathStr);
+			return path.normalize(getIsRelativePath(pathStr) ? (optionsObj.projectRootPath + '/' + pathStr) : pathStr);
 		});
 		this.restrictByDir = Array.isArray(this.inputOptions.onlyIn) && this.inputOptions.onlyIn.length > 0;
 		this.usesCache = typeof(optionsObj.outputFileName)==='string';
@@ -35,11 +35,11 @@ let FilelistHandler = (function(){
 		// Process input files
 		for (let x=0; x<optionsObj.files.length; x++){
 			let filePath = optionsObj.files[x];
-			filePath = path.normalize(getIsRelativePath(filePath) ? (projectRootPathTrailingSlash + filePath) : filePath);
+			filePath = path.normalize(getIsRelativePath(filePath) ? (optionsObj.projectRootPathTrailingSlash + filePath) : filePath);
 			this.pushFilePath(filePath, true);
 		}
-		// If no files were passed in by arg, and this is not running on a git hook...
-		if (this.filePaths.length === 0 && (!optionsObj.gitCommitHook || optionsObj.gitCommitHook.toString() === 'none')){
+		// If no files were explicitly passed in through options...
+		if (this.filePaths.length === 0){
 			// Get *all* files contained within content dirs
 			for (let x = 0; x < this.fullPathContentDirs.length; x++) {
 				let fullContentDirPath = this.fullPathContentDirs[x];
@@ -72,6 +72,9 @@ let FilelistHandler = (function(){
 				}
 			}
 		}
+		if (optionsObj.debug){
+			console.log(this.filePaths);
+		}
 	}
 	/**
 	* Add a file to the queue of file paths to retrieve dates for
@@ -81,7 +84,7 @@ let FilelistHandler = (function(){
 	FilelistHandlerInner.prototype.pushFilePath = function(filePath,checkExists){
 		if (this.getShouldTrackFile(filePath,checkExists)){
 			this.filePaths.push({
-				relativeToProjRoot: path.normalize(filePath).replace(path.normalize(projectRootPathTrailingSlash), ''),
+				relativeToProjRoot: path.normalize(filePath).replace(path.normalize(this.inputOptions.projectRootPathTrailingSlash), ''),
 				fullPath: filePath
 			});
 			return true;
@@ -100,6 +103,7 @@ let FilelistHandler = (function(){
 		if (this.usesCache && filePath.indexOf(posixNormalize(this.inputOptions.outputFileName)) !== -1) {
 			return false;
 		}
+		// Triggered by options.onlyIn
 		if (this.restrictByDir) {
 			let found = false;
 			// Block tracking any files outside the indicated content dirs

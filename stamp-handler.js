@@ -12,7 +12,7 @@ const { replaceZeros, projectRootPath } = require('./helpers');
 */
 function updateTimestampsCacheFile(cacheFilePath, jsonObj, optionsObj){
 	const shouldGitAdd = typeof(optionsObj.outputFileGitAdd)==='boolean' ? optionsObj.outputFileGitAdd : true;
-	const gitDir = typeof(optionsObj.projectRootPath)==='string' ? optionsObj.projectRootPath : projectRootPath;
+	const gitDir = optionsObj.projectRootPath;
 	const gitCommitHook = optionsObj.gitCommitHook;
 	/**
 	* Save back updated timestamps to file
@@ -45,17 +45,19 @@ function updateTimestampsCacheFile(cacheFilePath, jsonObj, optionsObj){
 * @param {string} [cacheKey] - What is the stamp currently stored under for this file?
 * @param {StampCache} [cache] - Object with key/pair values corresponding to valid stamps
 * @param {boolean} forceCreatedRefresh - If true, any existing created stamps in cache will be ignored, and re-calculated
-* @param {GitCommitHook} [gitCommitHook]
+* @param {FinalizedOptions} optionsObj
 * @returns {StampObject}
 */
-function getTimestampsFromFile(fullFilePath, cache, cacheKey, gitCommitHook, forceCreatedRefresh){
+function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceCreatedRefresh){
+	const gitCommitHook = optionsObj.gitCommitHook;
 	let ignoreCreatedCache = typeof(forceCreatedRefresh)==='boolean' ? forceCreatedRefresh : false;
 	let timestampsCache = typeof(cache)==='object' ? cache : {};
 	/**
 	 * @type {ChildProcExecOptions}
 	 */
 	const execOptions = {
-		stdio: 'pipe'
+		stdio: 'pipe',
+		cwd: optionsObj.projectRootPath
 	}
 	// Lookup values in cache
 	/**

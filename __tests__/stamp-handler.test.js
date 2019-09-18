@@ -4,7 +4,7 @@ const fse = require('fs-extra');
 const stHandler = require('../stamp-handler');
 const childProc = require('child_process');
 const { validateOptions } = require('../helpers');
-const { wasLastCommitAutoAddCache } = require('../test-helpers');
+const { wasLastCommitAutoAddCache } = require('../tst-helpers');
 
 // Set up some paths for testing
 const tempDirName = 'tempdir-stamphandler';

@@ -41,6 +41,15 @@ function _validateOptions(input){
 	/**
 	 * Fill in some defaults and check for invalid combos
 	 */
+	if (typeof(moddedOptions.projectRootPath)!=='string' || moddedOptions.projectRootPath.length === 0){
+		moddedOptions.projectRootPath = projectRootPath;
+	}
+	// Make sure project root does not end with trailing slash
+	if (/[\/\\]{0,2}$/.test(moddedOptions.projectRootPath)){
+		// remove trailing slashes
+		moddedOptions.projectRootPath = moddedOptions.projectRootPath.replace(/[\/\\]{0,2}$/,'');
+	}
+	moddedOptions.projectRootPathTrailingSlash = moddedOptions.projectRootPath + '/';
 	if (typeof(moddedOptions.outputToFile)!=='boolean'){
 		moddedOptions.outputToFile = false;
 	}
@@ -48,9 +57,10 @@ function _validateOptions(input){
 		if (typeof(moddedOptions.outputFileName)!=='string' || moddedOptions.outputFileName.length === 0){
 			moddedOptions.outputFileName = 'timestamps.json';
 		}
-	}
-	if (typeof(moddedOptions.projectRootPath)!=='string' || moddedOptions.projectRootPath.length === 0){
-		moddedOptions.projectRootPath = projectRootPath;
+		// Force outputFile (e.g. the cache file) to a full path if it is not
+		if (!path.isAbsolute(moddedOptions.outputFileName)){
+			moddedOptions.outputFileName = posixNormalize(`${moddedOptions.projectRootPath}/${moddedOptions.outputFileName}`);
+		}
 	}
 	// Reset invalid git commit hook selection
 	if (typeof(moddedOptions.gitCommitHook)==='string' && ['pre','post','none'].indexOf(moddedOptions.gitCommitHook)===-1){
@@ -67,6 +77,18 @@ function _validateOptions(input){
 	if (!Array.isArray(moddedOptions.files)){
 		// Reminder: An empty files array means that all files within the project space will be scanned!
 		moddedOptions.files = [];
+	}
+	// Debug - only allow for dev, and allow override
+	if (typeof(moddedOptions.debug)==='boolean'){
+		if (moddedOptions.debug === true && /.+\/laragon\/.+\/git-date-extractor.*/.test(posixNormalize(__dirname))){
+			moddedOptions.debug = true;
+		}
+		else {
+			moddedOptions.debug = false;
+		}
+	}
+	else {
+		moddedOptions.debug = false;
 	}
 	return moddedOptions;
 }
@@ -89,7 +111,9 @@ function validateOptions(input){
 		onlyIn: moddedOptions.onlyIn,
 		blockFiles: moddedOptions.blockFiles,
 		gitCommitHook: moddedOptions.gitCommitHook,
-		projectRootPath: moddedOptions.projectRootPath
+		projectRootPath: moddedOptions.projectRootPath,
+		projectRootPathTrailingSlash: moddedOptions.projectRootPathTrailingSlash,
+		debug: moddedOptions.debug
 	};
 	return finalOptions;
 }

@@ -5,14 +5,14 @@ const main = require('../');
 const fse = require('fs-extra');
 const path = require('path');
 const childProc = require('child_process');
-const { replaceInObj, projectRootPathTrailingSlash } = require('../helpers');
-const { wasLastCommitAutoAddCache } = require('../test-helpers');
+const { replaceInObj, projectRootPathTrailingSlash, posixNormalize } = require('../helpers');
+const { wasLastCommitAutoAddCache } = require('../tst-helpers');
 
 // Set up some paths for testing
 const tempDirName = 'tempdir-main';
-const tempDirPath = __dirname + '/' + tempDirName
+const tempDirPath = posixNormalize(__dirname + '/' + tempDirName)
 const cacheFileName = 'cache.json';
-const cacheFilePath = `${tempDirPath}/${cacheFileName}`;
+const cacheFilePath = posixNormalize(`${tempDirPath}/${cacheFileName}`);
 const tempSubDirName = 'subdir';
 
 const testFiles = {
@@ -33,10 +33,12 @@ const execOptions = {
 }
 
 let timingsSec = {};
+const checkTimeDelayMs = 5000;
 
 // Create directory and files for testing
 test.before(t => {
 	fse.ensureDirSync(tempDirPath);
+	fse.emptyDirSync(tempDirPath);
 	fse.ensureFileSync(testFiles.alpha);
 	fse.ensureFileSync(testFiles.bravo);
 	fse.ensureFileSync(testFiles.charlie);
@@ -45,12 +47,9 @@ test.before(t => {
 	fse.ensureFileSync(testFiles.subdir.echo);
 
 	// Git init
-	childProc.execSync(`git init`,{
-		cwd: tempDirPath
-	});
-	// Git commit all the files
+	childProc.execSync(`git init`,execOptions);
 	childProc.execSync('git add . && git commit -m "added files"',execOptions);
-	timingsSec.gitAdd = Math.floor((new Date()).getTime()/1000);
+	timingsSec.created = Math.floor((new Date()).getTime()/1000);
 });
 
 
@@ -58,12 +57,19 @@ test.before(t => {
  * This is really a full integration test
  */
 test('main - integration test', async t=> {
-	// Wait a bit so that we can make sure return values are based on git log and not file stat
+	// Wait a bit so that we can make sure there is a difference in stamps
 	await (new Promise((res,rej)=>{
 		setTimeout(()=>{
-			resolve();
-		},5000);
+			res();
+		},checkTimeDelayMs);
 	}));
+	// Touch alpha so it can be re-staged and committed - thus giving it a later modification stamp
+	fse.writeFileSync(testFiles.alpha,'test',{
+		flag: 'a'
+	});
+	// Git commit all the files
+	childProc.execSync('git add . && git commit -m "added files"',execOptions);
+	timingsSec.gitAdd = Math.floor((new Date()).getTime()/1000);
 	// Now run full process - get stamps, save to file, etc.
 	/**
 	 * @type {InputOptions}
@@ -81,6 +87,15 @@ test('main - integration test', async t=> {
 	t.deepEqual(result,savedResult);
 	// Check that last commit was from self
 	t.truthy(wasLastCommitAutoAddCache(tempDirPath,cacheFileName));
+	// Check that actual numbers came back for stamps
+	let alphaStamp = result['alpha.txt'];
+	t.true(typeof(alphaStamp.created)==='number');
+	t.true(typeof(alphaStamp.modified)==='number');
+	// Important: Check the time difference between file creation and modified. If processor failed, these will be the same due to file stat. If success, then there should be a 10 second diff between creation (file stat) and modified (git add)
+	const timeDelay = Number(alphaStamp.modified) - Number(result['alpha.txt'].created);
+	// Assume a 1 second variance is ok
+	const timeDiff = Math.abs((Math.floor(checkTimeDelayMs/1000)) - timeDelay);
+	t.true(timeDiff <= 1);
 });
 
 

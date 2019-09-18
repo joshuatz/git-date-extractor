@@ -97,6 +97,8 @@ test('Option validator', t=> {
 		onlyIn: undefined,
 		blockFiles: ['charlie.js'],
 		gitCommitHook: 'none',
-		projectRootPath: helpers.projectRootPath
+		projectRootPath: helpers.projectRootPath,
+		projectRootPathTrailingSlash: helpers.projectRootPathTrailingSlash,
+		debug: false
 	});
 });
