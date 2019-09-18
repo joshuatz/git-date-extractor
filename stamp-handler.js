@@ -77,7 +77,6 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 			if (!getIsValidStampVal(createdStamp) && gitCommitHook.toString() !== 'post') {
 				// During pre-commit, a file could be being added for the first time, so it wouldn't show up in the git log. We'll fall back to OS stats here
 				createdStamp = Math.floor(fse.lstatSync(fullFilePath).birthtimeMs / 1000);
-				console.log('asdfadsflkjaslkfjsafd')
 			}
 			if (Number.isNaN(createdStamp) === false) {
 				dateVals.created = createdStamp;

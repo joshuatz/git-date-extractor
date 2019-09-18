@@ -1,23 +1,12 @@
 // @ts-check
-
-/**
- * Notes:
- *  - The build up and tear down for this is complicated and could be refactored into a reusable function
- *  - Due to the sharing of the same test dir, these tests have to be run in serial, or else they conflict
- *  - If test dir generator func is written, should be easy to refactor back to concurrent test with separate test dirs
- */
-
-
 import test from 'ava';
 const main = require('../');
 const fse = require('fs-extra');
-const path = require('path');
 const childProc = require('child_process');
-const { replaceInObj, projectRootPathTrailingSlash, posixNormalize } = require('../helpers');
+const { posixNormalize } = require('../helpers');
 const tstHelpers = require('../tst-helpers');
 
 // Set up some paths for testing
-
 const cacheFileName = 'cache.json';
 const tempSubDirName = 'subdir';
 const tempDirNames = {
@@ -25,24 +14,20 @@ const tempDirNames = {
 	mainPreTest: 'tempdir-main-pre'
 }
 
-let timingsSec = {};
-
 /**
  * This is really a full integration test
  */
-test.serial('main - integration test - git post commit', async t=> {
+test('main - integration test - git post commit', async t=> {
 	// Create test dir
 	const tempDirName = tempDirNames.mainPostTest;
 	const tempDirPath = posixNormalize(__dirname + '/' + tempDirName);
 	const cacheFilePath = posixNormalize(`${tempDirPath}/${cacheFileName}`);
-	const {testFiles} = tstHelpers.buildTestDir(tempDirPath,tempSubDirName);
+	const {testFiles} = tstHelpers.buildTestDir(tempDirPath,tempSubDirName,true);
 	const checkTimeDelayMs = 5000;
 	// Git add the files, since we are emulating a post commit
 	childProc.execSync('git add . && git commit -m "added files"',{
 		cwd: tempDirPath
 	});
-	// Since created will be pulled off git history, update timings
-	timingsSec.created = Math.floor((new Date()).getTime()/1000);
 	// Wait a bit so that we can make sure there is a difference in stamps
 	await (new Promise((res,rej)=>{
 		setTimeout(()=>{
@@ -57,7 +42,6 @@ test.serial('main - integration test - git post commit', async t=> {
 	childProc.execSync('git add . && git commit -m "added files"',{
 		cwd: tempDirPath
 	});
-	timingsSec.gitAdd = Math.floor((new Date()).getTime()/1000);
 	// Now run full process - get stamps, save to file, etc.
 	/**
 	 * @type {InputOptions}
@@ -86,12 +70,12 @@ test.serial('main - integration test - git post commit', async t=> {
 	t.true(timeDiff <= 1);
 });
 
-test.serial('main - integration test - git pre commit', async t => {
+test('main - integration test - git pre commit', async t => {
 	// Create test dir
 	const tempDirName = tempDirNames.mainPreTest;
 	const tempDirPath = posixNormalize(__dirname + '/' + tempDirName);
 	const cacheFilePath = posixNormalize(`${tempDirPath}/${cacheFileName}`);
-	const {testFiles} = tstHelpers.buildTestDir(tempDirPath,tempSubDirName);
+	const {testFiles} = tstHelpers.buildTestDir(tempDirPath,tempSubDirName,true);
 	const checkTimeDelayMs = 3000;
 	// Wait a bit so that we can make sure there is a difference in stamps
 	await (new Promise((res,rej)=>{
@@ -120,7 +104,6 @@ test.serial('main - integration test - git pre commit', async t => {
 	t.falsy(tstHelpers.wasLastCommitAutoAddCache(tempDirPath,cacheFileName));
 	// Check that actual numbers came back for stamps
 	let alphaStamp = result['alpha.txt'];
-	tstHelpers.debugLog(alphaStamp);
 	t.true(typeof(alphaStamp.created)==='number');
 	t.true(typeof(alphaStamp.modified)==='number');
 	// Check time difference in stamps. Note that both modified and created stamps should be based off file stat, since no git history has been created
@@ -132,8 +115,8 @@ test.serial('main - integration test - git pre commit', async t => {
 
 // Teardown dir and files
 test.after.always(async t => {
-	for (let key in tempDirNames){
+	for (var key in tempDirNames){
 		const tempDirPath = posixNormalize(__dirname + '/' + tempDirNames[key]);
-		tstHelpers.removeTestDir(tempDirPath);
+		await tstHelpers.removeTestDir(tempDirPath);
 	}
 });
