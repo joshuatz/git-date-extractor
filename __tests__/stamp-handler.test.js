@@ -4,6 +4,7 @@ const fse = require('fs-extra');
 const stHandler = require('../stamp-handler');
 const childProc = require('child_process');
 const { validateOptions } = require('../helpers');
+const { wasLastCommitAutoAddCache } = require('../test-helpers');
 
 // Set up some paths for testing
 const tempDirName = 'tempdir-stamphandler';
@@ -19,14 +20,12 @@ test.before(t => {
 		cwd: tempDirPath
 	});
 	// Create JSON cacheFile
-	const cacheObj = {
-		//
-	};
+	const cacheObj = {};
 	fse.createFileSync(cacheFilePath);
 	fse.writeFileSync(cacheFilePath,JSON.stringify(cacheObj,null,2));
 });
 
-test('save cache file', t => {
+test.serial('save cache file', t => {
 	const nowStamp = (new Date()).getTime();
 	// Save without touching git
 	const cacheObj = {
@@ -49,16 +48,11 @@ test('save cache file', t => {
 	// Now read back the file and check
 	const saved = JSON.parse(fse.readFileSync(cacheFilePath).toString());
 	t.deepEqual(cacheObj,saved);
+});
+
+test.serial('cache file git commmit', t => {
 	// Check that the file was checked into git
-	const gitCommitMsg = childProc.execSync(`git show -s --format=%s`,{
-		cwd: tempDirPath
-	}).toString();
-	const changedFiles = childProc.execSync(`git show HEAD --name-only --format=%b`,{
-		cwd: tempDirPath
-	}).toString().trim();
-	// Test
-	t.truthy(/AUTO: Updated/.test(gitCommitMsg));
-	t.is(changedFiles,cacheFileName);
+	t.truthy(wasLastCommitAutoAddCache(tempDirPath,cacheFileName));
 });
 
 // Teardown - delete test files

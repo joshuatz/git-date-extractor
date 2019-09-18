@@ -2,7 +2,7 @@
 
 const childProc = require('child_process');
 const fse = require('fs-extra');
-const { replaceZeros, projectRootPath, nullDestination } = require('./helpers');
+const { replaceZeros, projectRootPath } = require('./helpers');
 
 /**
 * Updates the timestamp cache file and checks it into source control, depending on settings
