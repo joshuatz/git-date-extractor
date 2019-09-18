@@ -122,6 +122,19 @@ function replaceInObj(inputObj, replacerFunc){
 }
 
 /**
+ * Get the "null" destination
+ */
+function getNullDestination(){
+	if (process.platform === 'win32'){
+		return 'NUL';
+	}
+	else {
+		return '/dev/null';
+	}
+}
+const nullDestination = getNullDestination();
+
+/**
  * Are we in a subdirectory of the node_modules folder?
  * @param {string} [OPT_path] - Optional path to use as check dir
  */
@@ -192,5 +205,7 @@ module.exports = {
 	},
 	isInNodeModules,
 	validateOptions,
-	extractArrFromStr
+	extractArrFromStr,
+	getNullDestination,
+	nullDestination
 }

@@ -39,3 +39,8 @@ interface FinalizedOptions {
 	gitCommitHook: GitCommitHook,
 	projectRootPath?: string
 }
+
+// Dummy interface to get around weird VSCode issue not picking up type def file
+interface ChildProcExecOptions extends ExecSyncOptions {
+	//
+}

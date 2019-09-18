@@ -2,7 +2,7 @@
 
 const childProc = require('child_process');
 const fse = require('fs-extra');
-const { replaceZeros, projectRootPath } = require('./helpers');
+const { replaceZeros, projectRootPath, nullDestination } = require('./helpers');
 
 /**
 * Updates the timestamp cache file and checks it into source control, depending on settings
@@ -51,6 +51,12 @@ function updateTimestampsCacheFile(cacheFilePath, jsonObj, optionsObj){
 function getTimestampsFromFile(fullFilePath, cache, cacheKey, gitCommitHook, forceCreatedRefresh){
 	let ignoreCreatedCache = typeof(forceCreatedRefresh)==='boolean' ? forceCreatedRefresh : false;
 	let timestampsCache = typeof(cache)==='object' ? cache : {};
+	/**
+	 * @type {ChildProcExecOptions}
+	 */
+	const execOptions = {
+		stdio: 'pipe'
+	}
 	// Lookup values in cache
 	/**
 	* @type {StampObject}
@@ -63,7 +69,7 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, gitCommitHook, for
 			/**
 			* @type {any}
 			*/
-			let createdStamp = childProc.execSync(`git log --pretty=format:%at -- "${fullFilePath}" | tail -n 1`).toString();
+			let createdStamp = childProc.execSync(`git log --pretty=format:%at -- "${fullFilePath}" | tail -n 1`,execOptions).toString();
 			createdStamp = Number(createdStamp);
 			if (Number.isNaN(createdStamp) === true && gitCommitHook.toString() !== 'post') {
 				// During pre-commit, a file could be being added for the first time, so it wouldn't show up in the git log. We'll fall back to OS stats here
@@ -77,7 +83,7 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, gitCommitHook, for
 		let modifiedStamp = null;
 		if (gitCommitHook === 'none' || gitCommitHook === 'post') {
 			// If this is running after the commit that modified the file, we can use git log to pull the modified time out
-			modifiedStamp = childProc.execSync(`git log --pretty=format:%at --follow -- "${fullFilePath}" | sort | tail -n 1`).toString();
+			modifiedStamp = childProc.execSync(`git log --pretty=format:%at --follow -- "${fullFilePath}" | sort | tail -n 1`,execOptions).toString();
 		}
 		else if (gitCommitHook === 'pre') {
 			// If this is running before the changed files have actually be commited, they either won't show up in the git log, or the modified time in the log will be from one commit ago, not the current
