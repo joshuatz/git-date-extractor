@@ -4,11 +4,18 @@ const fse = require('fs-extra');
 const path = require('path');
 const walkdir = require('walkdir');
 const { posixNormalize, getIsRelativePath } = require('./helpers');
+const { debugLog } = require('./tst-helpers');
 
 let FilelistHandler = (function(){
 	const internalDirBlockList = [
 		'node_modules',
 		'.git'
+	];
+	const internalDirBlockPatterns = [
+		// Block all .___ directories
+		/^\..*$/,
+		// Block all __tests__ and similar
+		/^__[^_]+__$/
 	];
 	const internalFileBlockPatterns = [
 		// .__ files
@@ -19,13 +26,14 @@ let FilelistHandler = (function(){
 	* @param {FinalizedOptions} optionsObj
 	*/
 	function FilelistHandlerInner(optionsObj){
+		// debugLog(optionsObj);
 		this.inputOptions = optionsObj;
 		/**
 		* @type Array<{relativeToProjRoot:string, fullPath: string}>
 		*/
 		this.filePaths = [];
 		// Parse filter options
-		this.contentDirs = Array.isArray(this.inputOptions.onlyIn) ? this.inputOptions.onlyIn : [optionsObj.projectRootPath];
+		this.contentDirs = Array.isArray(this.inputOptions.onlyIn) && this.inputOptions.onlyIn.length > 0  ? this.inputOptions.onlyIn : [optionsObj.projectRootPath];
 		this.fullPathContentDirs = this.contentDirs.map(function(pathStr){
 			return path.normalize(getIsRelativePath(pathStr) ? (optionsObj.projectRootPath + '/' + pathStr) : pathStr);
 		});
@@ -41,21 +49,26 @@ let FilelistHandler = (function(){
 		// If no files were explicitly passed in through options...
 		if (this.filePaths.length === 0){
 			// Get *all* files contained within content dirs
+			// debugLog(this.fullPathContentDirs);
 			for (let x = 0; x < this.fullPathContentDirs.length; x++) {
 				let fullContentDirPath = this.fullPathContentDirs[x];
 				let paths = walkdir.sync(fullContentDirPath,function(pathStr,stat){
 					const pathDirName = path.basename(pathStr);
+					// debugLog(pathDirName);
 					// Check internal block list of directories
 					if (internalDirBlockList.indexOf(pathDirName)!==-1){
 						this.ignore(pathStr);
 					}
-					// Block all .___ directories
-					else if (/^\..*$/.test(pathDirName)){
-						this.ignore(pathStr);
-					}
-					// Block all __tests__ and similar
-					else if (/^__[^_]+__$/.test(pathDirName)){
-						this.ignore(pathStr);
+					for (let db=0; db < internalDirBlockPatterns.length; db++){
+						let blocked = false;
+						if (internalDirBlockPatterns[db].test(pathDirName)){
+							blocked = true;
+							// debugLog('Blocked based on DirBlockPatt - ' + pathDirName);
+						}
+						if (blocked){
+							this.ignore(pathStr);
+							break;
+						}
 					}
 				});
 				for (let p = 0; p < paths.length; p++) {
@@ -64,6 +77,7 @@ let FilelistHandler = (function(){
 					for (let b=0; b<internalFileBlockPatterns.length; b++){
 						if (internalFileBlockPatterns[b].test(fileOrDirName)){
 							blocked = true;
+							// debugLog('blocked based on fileBlockPatt - ' + fileOrDirName);
 							break;
 						}
 					}
@@ -85,6 +99,7 @@ let FilelistHandler = (function(){
 	*/
 	FilelistHandlerInner.prototype.pushFilePath = function(filePath,checkExists){
 		if (this.getShouldTrackFile(filePath,checkExists)){
+			// debugLog(this.inputOptions.projectRootPathTrailingSlash);
 			this.filePaths.push({
 				relativeToProjRoot: path.normalize(filePath).replace(path.normalize(this.inputOptions.projectRootPathTrailingSlash), ''),
 				fullPath: filePath
@@ -125,12 +140,16 @@ let FilelistHandler = (function(){
 		if (this.usesBlockFiles && this.inputOptions.blockFiles.indexOf(fileName)!==-1){
 			return false;
 		}
+		if (this.usesBlockFiles && this.inputOptions.blockFiles.indexOf(filePath)!==-1){
+			return false;
+		}
 		/* istanbul ignore if */
 		if (fse.lstatSync(filePath).isDirectory() === true) {
 			return false;
 		}
 		if (checkExists) {
 			if (fse.existsSync(filePath) === false) {
+				// debugLog(filePath);
 				return false;
 			}
 		}
