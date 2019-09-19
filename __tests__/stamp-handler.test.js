@@ -1,10 +1,10 @@
 // @ts-check
 import test from 'ava';
 const fse = require('fs-extra');
-const stHandler = require('../stamp-handler');
+const stHandler = require('../src/stamp-handler');
 const childProc = require('child_process');
-const { validateOptions } = require('../helpers');
-const { wasLastCommitAutoAddCache } = require('../tst-helpers');
+const { validateOptions } = require('../src/helpers');
+const { wasLastCommitAutoAddCache } = require('../src/tst-helpers');
 
 // Set up some paths for testing
 const tempDirName = 'tempdir-stamphandler';

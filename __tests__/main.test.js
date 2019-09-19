@@ -1,10 +1,10 @@
 // @ts-check
 import test from 'ava';
-const main = require('../');
+const main = require('../src');
 const fse = require('fs-extra');
 const childProc = require('child_process');
-const { posixNormalize } = require('../helpers');
-const tstHelpers = require('../tst-helpers');
+const { posixNormalize } = require('../src/helpers');
+const tstHelpers = require('../src/tst-helpers');
 
 // Set up some paths for testing
 const cacheFileName = 'cache.json';

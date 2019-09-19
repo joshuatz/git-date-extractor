@@ -1,6 +1,6 @@
 // @ts-check
 import test from 'ava';
-import * as helpers from '../helpers';
+import * as helpers from '../src/helpers';
 /**
 * Helpers testing
 */

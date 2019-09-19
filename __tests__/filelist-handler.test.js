@@ -1,11 +1,11 @@
 /// <reference path="../types.d.ts"/>
 // @ts-check
 import test from 'ava';
-const FilelistHandler = require('../filelist-handler');
-const {replaceInObj, validateOptions, posixNormalize} = require('../helpers');
+const FilelistHandler = require('../src/filelist-handler');
+const {replaceInObj, validateOptions, posixNormalize} = require('../src/helpers');
 const fse = require('fs-extra');
 const path = require('path');
-const {debugLog} = require('../tst-helpers');
+const {debugLog} = require('../src/tst-helpers');
 
 // Set up some paths for testing
 // Test folder will be built in project root to avoid auto-filter based on __tests__ dirname

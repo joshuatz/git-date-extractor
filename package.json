@@ -10,8 +10,8 @@
 		"url": "https://joshuatz.com"
 	},
 	"bin": {
-		"git-date-extractor": "cli.js",
-		"git-dates": "cli.js"
+		"git-date-extractor": "src/cli.js",
+		"git-dates": "src/cli.js"
 	},
 	"engines": {
 		"node": ">=8"
@@ -22,13 +22,15 @@
 		"test-nolint": "nyc ava"
 	},
 	"files": [
-		"index.js",
-		"cli.js"
+		"src/"
 	],
 	"keywords": [
 		"cli-app",
 		"cli",
-		""
+		"git",
+		"date",
+		"timestamp",
+		"last-modified"
 	],
 	"dependencies": {
 		"fs-extra": "^8.1.0",
