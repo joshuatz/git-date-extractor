@@ -71,7 +71,7 @@ test('main - integration test - git post commit', async t => {
 	const timeDelay = Number(alphaStamp.modified) - Number(result['alpha.txt'].created);
 	// Assume a small variance is OK
 	const timeDiff = Math.abs((Math.floor(checkTimeDelayMs / 1000)) - timeDelay);
-	t.true(timeDiff <= maxTimeVarianceSec, `Diff between created and modified should have been ${checkTimeDelayMs}, but was ${timeDiff}. This is beyond the accepted variance of ${maxTimeVarianceSec}.`);
+	t.true(timeDiff <= maxTimeVarianceSec, `Diff between created and modified should have been ${Math.floor(checkTimeDelayMs / 1000)}, but was ${timeDelay}. This variance of ${timeDiff} is beyond the accepted variance of ${maxTimeVarianceSec}.`);
 });
 
 test('main - integration test - git pre commit', async t => {
@@ -79,7 +79,7 @@ test('main - integration test - git pre commit', async t => {
 	const tempDirName = tempDirNames.mainPreTest;
 	const tempDirPath = posixNormalize(__dirname + '/' + tempDirName);
 	const {testFiles} = tstHelpers.buildTestDir(tempDirPath, tempSubDirName, true, cacheFileName);
-	const checkTimeDelayMs = 3000;
+	const checkTimeDelayMs = 8000;
 	// Wait a bit so that we can make sure there is a difference in stamps
 	await (new Promise((resolve) => {
 		setTimeout(() => {
@@ -113,7 +113,7 @@ test('main - integration test - git pre commit', async t => {
 	const timeDelay = Number(alphaStamp.modified) - Number(result['alpha.txt'].created);
 	// Assume a small variance is OK
 	const timeDiff = Math.abs((Math.floor(checkTimeDelayMs / 1000)) - timeDelay);
-	t.true(timeDiff <= maxTimeVarianceSec, `Diff between created and modified should have been ${checkTimeDelayMs}, but was ${timeDiff}. This is beyond the accepted variance of ${maxTimeVarianceSec}.`);
+	t.true(timeDiff <= maxTimeVarianceSec, `Diff between created and modified should have been ${Math.floor(checkTimeDelayMs / 1000)}, but was ${timeDelay}. This variance of ${timeDiff} is beyond the accepted variance of ${maxTimeVarianceSec}.`);
 });
 
 // Teardown dir and files
