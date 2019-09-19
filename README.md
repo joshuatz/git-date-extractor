@@ -10,6 +10,10 @@ I made this tool because, in trying to set up an automated static site deploymen
 
 Essentially, this is a way to run a command and get back a list of `created` and `modified` timestamps based on `git` history, regardless of when the files were actually created on your computer.
 
+## Quick Demo:
+
+![Demo GIF](./readme-assets/No_Options_Output_To_Console.gif)
+
 
 ## Install
 
