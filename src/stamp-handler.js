@@ -83,7 +83,7 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 			createdStamp = Number(createdStamp);
 			if (!getIsValidStampVal(createdStamp) && gitCommitHook.toString() !== 'post') {
 				// During pre-commit, a file could be being added for the first time, so it wouldn't show up in the git log. We'll fall back to OS stats here
-				createdStamp = Math.floor(fse.lstatSync(fullFilePath).birthtimeMs / 1000);
+				createdStamp = Math.floor(fse.statSync(fullFilePath).birthtimeMs / 1000);
 			}
 			if (Number.isNaN(createdStamp) === false) {
 				dateVals.created = createdStamp;
@@ -99,7 +99,7 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 		if (gitCommitHook === 'pre' || !getIsValidStampVal(modifiedStamp)) {
 			// If this is running before the changed files have actually be commited, they either won't show up in the git log, or the modified time in the log will be from one commit ago, not the current
 			// Pull modified time from file itself
-			modifiedStamp = Math.floor(fse.lstatSync(fullFilePath).mtimeMs / 1000);
+			modifiedStamp = Math.floor(fse.statSync(fullFilePath).mtimeMs / 1000);
 		}
 		if (Number.isNaN(modifiedStamp) === false) {
 			dateVals.modified = modifiedStamp;
