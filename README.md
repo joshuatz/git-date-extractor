@@ -81,6 +81,7 @@ $ git-dates --help
 		--files {string[] | string}
 		--onlyIn {string[] | string}
 		--blockFiles {string[] | string}
+		--allowFiles {string[] | string}
 		--gitCommitHook {"post" | "pre" | "none"}
 		--projectRootPath {string}
 
@@ -108,6 +109,7 @@ outputFileName | out-file-name | Name of the file to save to (if applicable) | `
 outputFileGitAdd | NA | If saving to file, should the file be `git add`'ed after update?<br>Note: This will only stage the file, unless you set gitCommitHook=post, then it will commit it. | `boolean` | `true`
 files | file | Specific files to get timestamps for | `string[] or string` | NA - if empty, script will scan entire dir
 onlyIn | dirs | Filter files by specific directory | `string[] or string` | NA
-blockFiles | blocklist | Block certain files from being tracked | `string[] or sring` | NA
+blockFiles | blocklist | Block certain files from being tracked | `string[] or string` | NA
+allowFiles | whitelist | Exception list of filepaths that will override blocks | `string[] or string | NA
 gitCommitHook | git-stage | Use this if you are running this script on a git hook.<br>For example, use `post` and the script will append a new commit with the changed timestamp file. | `"pre" or "post" or "none"` | NA
 projectRootPath | rootDir | Top level directory containing your files.<br>Script should be able to detect automatically, but can also pass to be safe. | `string` | Auto-detected based on `proccess.cwd()`<br>or `__dirname`

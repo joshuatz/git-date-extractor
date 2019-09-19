@@ -16,6 +16,7 @@ const cli = meow(`
 	  --files {string[] | string}
 	  --onlyIn {string[] | string}
 	  --blockFiles {string[] | string}
+	  --allowFiles {string[] | string}
 	  --gitCommitHook {"post" | "pre" | "none"}
 	  --projectRootPath {string}
 
@@ -57,6 +58,11 @@ const cli = meow(`
 			type: 'string',
 			default: undefined,
 			alias: 'blocklist'
+		},
+		allowFiles: {
+			type: 'string',
+			default: undefined,
+			alias: 'whitelist'
 		},
 		gitCommitHook: {
 			type: 'string',

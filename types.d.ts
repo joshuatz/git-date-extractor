@@ -22,7 +22,9 @@ interface InputOptions {
     // Only update for files in these directories
     onlyIn?: string[] | string,
     // Block certain files from being tracked
-    blockFiles?: string[] | string,
+	blockFiles?: string[] | string,
+	// Exception list of files that will override any blocks
+	allowFiles?: string[] | string,
     // What triggered the execution
 	gitCommitHook?: GitCommitHook,
 	// Project root
@@ -35,7 +37,8 @@ interface FinalizedOptions {
 	outputFileGitAdd?: boolean,
     files: string[],
     onlyIn?: string[],
-    blockFiles?: string[],
+	blockFiles?: string[],
+	allowFiles?: string[],
 	gitCommitHook: GitCommitHook,
 	projectRootPath: string,
 	projectRootPathTrailingSlash: string,

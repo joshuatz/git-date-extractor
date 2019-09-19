@@ -76,6 +76,9 @@ function _validateOptions(input){
 	if (typeof(moddedOptions.blockFiles)==='string'){
 		moddedOptions.blockFiles = extractArrFromStr(moddedOptions.blockFiles);
 	}
+	if (typeof(moddedOptions.allowFiles)==='string'){
+		moddedOptions.allowFiles = extractArrFromStr(moddedOptions.allowFiles);
+	}
 	// Force to array
 	if (!Array.isArray(moddedOptions.files)){
 		// Reminder: An empty files array means that all files within the project space will be scanned!
@@ -114,6 +117,7 @@ function validateOptions(input){
 		files: moddedOptions.files,
 		onlyIn: moddedOptions.onlyIn,
 		blockFiles: moddedOptions.blockFiles,
+		allowFiles: moddedOptions.allowFiles,
 		gitCommitHook: moddedOptions.gitCommitHook,
 		projectRootPath: moddedOptions.projectRootPath,
 		projectRootPathTrailingSlash: moddedOptions.projectRootPathTrailingSlash,

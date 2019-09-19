@@ -37,6 +37,10 @@ let FilelistHandler = (function(){
 		this.fullPathContentDirs = this.contentDirs.map(function(pathStr){
 			return path.normalize(getIsRelativePath(pathStr) ? (optionsObj.projectRootPath + '/' + pathStr) : pathStr);
 		});
+		this.alwaysAllowFileNames = Array.isArray(this.inputOptions.allowFiles) && this.inputOptions.allowFiles.length > 0 ? this.inputOptions.allowFiles : [];
+		this.alwaysAllowFilePaths = this.alwaysAllowFileNames.map(function(pathStr){
+			return path.normalize(getIsRelativePath(pathStr) ? (optionsObj.projectRootPath + '/' + pathStr) : pathStr);
+		});
 		this.restrictByDir = Array.isArray(this.inputOptions.onlyIn) && this.inputOptions.onlyIn.length > 0;
 		this.usesCache = typeof(optionsObj.outputFileName)==='string';
 		this.usesBlockFiles = Array.isArray(optionsObj.blockFiles) && optionsObj.blockFiles.length > 0;
@@ -114,12 +118,17 @@ let FilelistHandler = (function(){
 	* @param {boolean} [checkExists]  - If the func should check that the file actually exists before adding
 	*/
 	FilelistHandlerInner.prototype.getShouldTrackFile = function(filePath, checkExists){
+		let shouldBlock = false;
 		filePath = posixNormalize(filePath);
 		const fileName = path.basename(filePath);
 		checkExists = typeof (checkExists) === "boolean" ? checkExists : false;
 		// Block tracking the actual timestamps file
 		if (this.usesCache && filePath.indexOf(posixNormalize(this.inputOptions.outputFileName)) !== -1) {
-			return false;
+			// Only let this be overrwritten by allowFiles whitelist if gitcommithook is equal to 'none' or unset
+			if (this.inputOptions.gitCommitHook==='pre' || this.inputOptions.gitCommitHook==='post'){
+				return false;
+			}
+			shouldBlock = true;
 		}
 		// Triggered by options.onlyIn
 		if (this.restrictByDir) {
@@ -133,15 +142,15 @@ let FilelistHandler = (function(){
 			}
 			if (!found) {
 				// not in content dirs - block adding
-				return false;
+				shouldBlock = true;
 			}
 		}
 		// Block tracking any on blacklist
 		if (this.usesBlockFiles && this.inputOptions.blockFiles.indexOf(fileName)!==-1){
-			return false;
+			shouldBlock = true;
 		}
 		if (this.usesBlockFiles && this.inputOptions.blockFiles.indexOf(filePath)!==-1){
-			return false;
+			shouldBlock = true;
 		}
 		/* istanbul ignore if */
 		if (fse.lstatSync(filePath).isDirectory() === true) {
@@ -149,7 +158,18 @@ let FilelistHandler = (function(){
 		}
 		if (checkExists) {
 			if (fse.existsSync(filePath) === false) {
-				// debugLog(filePath);
+				return false;
+			}
+		}
+		if (shouldBlock){
+			// Let  override with allowFiles
+			if (this.alwaysAllowFileNames.indexOf(fileName)!==-1){
+				return true;
+			}
+			else if (this.alwaysAllowFilePaths.indexOf(filePath)!==-1){
+				return true;
+			}
+			else {
 				return false;
 			}
 		}

@@ -96,6 +96,7 @@ test('Option validator', t=> {
 		files: ['alpha.txt','bravo.txt'],
 		onlyIn: undefined,
 		blockFiles: ['charlie.js'],
+		allowFiles: undefined,
 		gitCommitHook: 'none',
 		projectRootPath: helpers.projectRootPath,
 		projectRootPathTrailingSlash: helpers.projectRootPathTrailingSlash,
