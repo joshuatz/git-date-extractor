@@ -1,56 +1,57 @@
 // @ts-check
 const childProc = require('child_process');
-const fse = require('fs-extra');
 const path = require('path');
-const { replaceInObj, projectRootPathTrailingSlash } = require('./helpers');
+const fse = require('fs-extra');
+const {replaceInObj, projectRootPathTrailingSlash} = require('./helpers');
 
 /**
  * Test if the last commit in the log is from self (auto add of cache file)
  * @param {string} gitDir - Path where the commit was made
  * @param {string} cacheFileName - Filename (not path) of the cache file that was added
+ * @returns {boolean} If commit was from self
  */
-function wasLastCommitAutoAddCache(gitDir,cacheFileName){
+function wasLastCommitAutoAddCache(gitDir, cacheFileName) {
 	try {
-		const gitCommitMsg = childProc.execSync(`git show -s --format=%s`,{
+		const gitCommitMsg = childProc.execSync(`git show -s --format=%s`, {
 			cwd: gitDir
 		}).toString();
-		const changedFiles = childProc.execSync(`git show HEAD --name-only --format=%b`,{
+		const changedFiles = childProc.execSync(`git show HEAD --name-only --format=%b`, {
 			cwd: gitDir
 		}).toString().trim();
 		const commitMsgMatch = /AUTO: Updated/.test(gitCommitMsg);
 		const changedFilesMatch = changedFiles === cacheFileName;
 		return commitMsgMatch && changedFilesMatch;
-	}
-	catch (e){
+	} catch (error) {
 		return false;
 	}
 }
 
 /* istanbul ignore next */
-function debugLog(msg){
+function debugLog(msg) {
 	console.log(msg);
-	if (typeof(msg)==='object'){
+	if (typeof (msg) === 'object') {
 		msg = JSON.stringify(msg);
 	}
 	msg = '\n' + msg;
 	const debugLog = './debug.txt';
-	fse.exists(debugLog,function(exists){
-		if (exists){
-			fse.writeFileSync(debugLog,msg,{
+	fse.exists(debugLog, function(exists) {
+		if (exists) {
+			fse.writeFileSync(debugLog, msg, {
 				flag: 'a'
 			});
 		}
-	})
+	});
 }
 
 /**
- *
- * @param {string} tempDirPath
- * @param {string} tempSubDirName
- * @param {boolean} gitInit
- * @param {string} [cacheFileName]
+ * Build a test dir based on inputs
+ * @param {string} tempDirPath - The full path of the temp dir
+ * @param {string} tempSubDirName - the name of the subdir
+ * @param {boolean} gitInit - if `git init` should be ran in dir
+ * @param {string} [cacheFileName] - If cache file should be created, pass name
+ * @returns {object} info about created test dir
  */
-function buildTestDir(tempDirPath,tempSubDirName,gitInit,cacheFileName){
+function buildTestDir(tempDirPath, tempSubDirName, gitInit, cacheFileName) {
 	const testFiles = {
 		alpha: `${tempDirPath}/alpha.txt`,
 		bravo: `${tempDirPath}/bravo.txt`,
@@ -60,8 +61,8 @@ function buildTestDir(tempDirPath,tempSubDirName,gitInit,cacheFileName){
 			echo: `${tempDirPath}/${tempSubDirName}/echo.txt`
 		}
 	};
-	const testFilesRelative = replaceInObj(testFiles,function(filePath){
-		return path.normalize(filePath).replace(path.normalize(projectRootPathTrailingSlash),'');
+	const testFilesRelative = replaceInObj(testFiles, filePath => {
+		return path.normalize(filePath).replace(path.normalize(projectRootPathTrailingSlash), '');
 	});
 	fse.ensureDirSync(tempDirPath);
 	fse.emptyDirSync(tempDirPath);
@@ -71,13 +72,13 @@ function buildTestDir(tempDirPath,tempSubDirName,gitInit,cacheFileName){
 	fse.ensureDirSync(`${tempDirPath}/${tempSubDirName}`);
 	fse.ensureFileSync(testFiles.subdir.delta);
 	fse.ensureFileSync(testFiles.subdir.echo);
-	if (typeof(cacheFileName)==='string'){
+	if (typeof (cacheFileName) === 'string') {
 		fse.ensureFileSync(`${tempDirPath}/${cacheFileName}`);
 	}
-	const stamp = Math.floor((new Date()).getTime()/1000);
+	const stamp = Math.floor((new Date()).getTime() / 1000);
 	/* istanbul ignore else */
-	if (gitInit){
-		childProc.execSync(`git init`,{
+	if (gitInit) {
+		childProc.execSync(`git init`, {
 			cwd: tempDirPath
 		});
 	}
@@ -85,10 +86,10 @@ function buildTestDir(tempDirPath,tempSubDirName,gitInit,cacheFileName){
 		testFiles,
 		testFilesRelative,
 		stamp
-	}
+	};
 }
 
-async function removeTestDir(tempDirPath){
+async function removeTestDir(tempDirPath) {
 	// Just delete the top level dir
 	await fse.emptyDir(tempDirPath);
 	await fse.rmdir(tempDirPath);
@@ -99,4 +100,4 @@ module.exports = {
 	debugLog,
 	buildTestDir,
 	removeTestDir
-}
+};

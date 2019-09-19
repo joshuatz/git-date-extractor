@@ -49,5 +49,13 @@
 			"lcov",
 			"text"
 		]
+	},
+	"xo": {
+		"rules": {
+			"quotes": "off",
+			"prefer-arrow-callback": "off",
+			"padding-line-between-statements": "off",
+			"space-before-function-paren": "off"
+		}
 	}
 }

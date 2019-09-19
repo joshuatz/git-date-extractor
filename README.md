@@ -10,7 +10,9 @@ I made this tool because, in trying to set up an automated static site deploymen
 
 Essentially, this is a way to run a command and get back a list of `created` and `modified` timestamps based on `git` history, regardless of when the files were actually created on your computer.
 
-## Quick Demo:
+It can run as either a CLI tool, or via JS, and returns an easy to parse JSON object with filenames as the key, and UNIX timestamps for created/modified times as the values.
+
+## Quick Demo (CLI Usage):
 
 ![Demo GIF](./readme-assets/No_Options_Output_To_Console.gif)
 
@@ -50,19 +52,43 @@ This script will produce an output of:
 
 
 ### Via JS
+
+Generic usage:
 ```js
 const gitDateExtractor = require('git-date-extractor');
 
 const stamps = gitDateExtractor.getStamps(optionsObject);
+```
 
-/**
- * Example:
+Sample demo:
+```js
+// This will store stamps into `stamps` variable, as well as save to file
 const stamps = gitDateExtractor.getStamps({
 	outputToFile: true,
 	outputFileName: 'timestamps.json',
 	projectRootPath: __dirname
 });
+console.log(stamps);
+/**
+ * Output looks like:
+ */
+/*
+{
+  "alpha.txt": {
+    "created": 1568785761,
+    "modified": 1568790468
+  },
+  "bravo.txt": {
+    "created": 1568785761,
+    "modified": 1568790468
+  },
+  "subdir/charlie.txt": {
+    "created": 1568785762,
+    "modified": 1568790368
+  }
+}
 */
+
 ```
 
 ### Via CLI
