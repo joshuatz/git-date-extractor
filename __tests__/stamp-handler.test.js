@@ -1,28 +1,29 @@
 // @ts-check
 import test from 'ava';
+
+const childProc = require('child_process');
 const fse = require('fs-extra');
 const stHandler = require('../src/stamp-handler');
-const childProc = require('child_process');
-const { validateOptions } = require('../src/helpers');
-const { wasLastCommitAutoAddCache } = require('../src/tst-helpers');
+const {validateOptions} = require('../src/helpers');
+const {wasLastCommitAutoAddCache} = require('../src/tst-helpers');
 
 // Set up some paths for testing
 const tempDirName = 'tempdir-stamphandler';
-const tempDirPath = __dirname + '/' + tempDirName
+const tempDirPath = __dirname + '/' + tempDirName;
 const cacheFileName = 'cache.json';
 const cacheFilePath = `${tempDirPath}/${cacheFileName}`;
 
 // Create test files
-test.before(t => {
+test.before(() => {
 	fse.ensureDirSync(tempDirPath);
-	// git init - will fail if git is not installed
-	childProc.execSync(`git init`,{
+	// Git init - will fail if git is not installed
+	childProc.execSync(`git init`, {
 		cwd: tempDirPath
 	});
 	// Create JSON cacheFile
 	const cacheObj = {};
 	fse.createFileSync(cacheFilePath);
-	fse.writeFileSync(cacheFilePath,JSON.stringify(cacheObj,null,2));
+	fse.writeFileSync(cacheFilePath, JSON.stringify(cacheObj, null, 2));
 });
 
 test.serial('save cache file', t => {
@@ -43,20 +44,20 @@ test.serial('save cache file', t => {
 		gitCommitHook: 'post',
 		projectRootPath: tempDirPath,
 		outputToFile: true
-	}
-	stHandler.updateTimestampsCacheFile(cacheFilePath,cacheObj,validateOptions(dummyOptions));
+	};
+	stHandler.updateTimestampsCacheFile(cacheFilePath, cacheObj, validateOptions(dummyOptions));
 	// Now read back the file and check
 	const saved = JSON.parse(fse.readFileSync(cacheFilePath).toString());
-	t.deepEqual(cacheObj,saved);
+	t.deepEqual(cacheObj, saved);
 });
 
 test.serial('cache file git commmit', t => {
 	// Check that the file was checked into git
-	t.truthy(wasLastCommitAutoAddCache(tempDirPath,cacheFileName));
+	t.truthy(wasLastCommitAutoAddCache(tempDirPath, cacheFileName));
 });
 
 // Teardown - delete test files
-test.after.always(t => {
+test.after.always(() => {
 	fse.emptyDirSync(tempDirPath);
 	fse.rmdirSync(tempDirPath);
 });

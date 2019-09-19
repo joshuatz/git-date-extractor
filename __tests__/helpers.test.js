@@ -5,12 +5,12 @@ import * as helpers from '../src/helpers';
 * Helpers testing
 */
 test('posixNormalize', t => {
-	let inputPath = 'c:\\dir\\myfile.js';
-	let normalized = helpers.posixNormalize(inputPath);
-	t.is(normalized,'c:/dir/myfile.js');
+	const inputPath = 'c:\\dir\\myfile.js';
+	const normalized = helpers.posixNormalize(inputPath);
+	t.is(normalized, 'c:/dir/myfile.js');
 });
-test('replaceZeros', t=>{
-	let input = {
+test('replaceZeros', t => {
+	const input = {
 		alpha: 0,
 		bravo: 'str',
 		nested: {
@@ -18,8 +18,8 @@ test('replaceZeros', t=>{
 			str: 'str'
 		}
 	};
-	let replaced = helpers.replaceZeros(input,'replaced');
-	t.deepEqual(replaced,{
+	const replaced = helpers.replaceZeros(input, 'replaced');
+	t.deepEqual(replaced, {
 		alpha: 'replaced',
 		bravo: 'str',
 		nested: {
@@ -29,10 +29,10 @@ test('replaceZeros', t=>{
 	});
 });
 
-test('git folder check', async t=>{
+test('git folder check', t => {
 	// The entire test will fail if the overall project is not git-inited
 	// First test the working directory
-	t.assert(helpers.getIsInGitRepo());
+	t.true(helpers.getIsInGitRepo());
 	// Then go to hdd root and test there (should probably not be a git repo haha)
 	t.falsy(helpers.getIsInGitRepo('/'));
 });
@@ -50,14 +50,13 @@ test('replaceInObj', t => {
 			}
 		}
 	};
-	const replacer = function(input){
-		if (typeof(input)==='string'){
+	const replacer = function(input) {
+		if (typeof (input) === 'string') {
 			return input.toLowerCase();
 		}
-		else {
-			return input * 2;
-		}
-	}
+
+		return input * 2;
+	};
 	const expected = {
 		alpha: 4,
 		bravo: 'bravo',
@@ -69,31 +68,31 @@ test('replaceInObj', t => {
 				delta: 12
 			}
 		}
-	}
-	t.deepEqual(helpers.replaceInObj(inputObj,replacer),expected);
+	};
+	t.deepEqual(helpers.replaceInObj(inputObj, replacer), expected);
 });
 
-test('isInNodeModules', t=>{
+test('isInNodeModules', t => {
 	t.false(helpers.isInNodeModules());
 	t.true(helpers.isInNodeModules('/node_modules/test/test.txt'));
 });
 
-test('Option validator', t=> {
+test('Option validator', t => {
 	/**
 	 * @type {InputOptions}
 	 */
 	const dummyOptions = {
 		files: '[alpha.txt, bravo.txt]',
 		blockFiles: 'charlie.js',
-		//@ts-ignore
+		// @ts-ignore
 		gitCommitHook: 'invalid'
-	}
+	};
 	const actual = helpers.validateOptions(dummyOptions);
-	t.deepEqual(actual,{
+	t.deepEqual(actual, {
 		outputToFile: false,
 		outputFileName: undefined,
 		outputFileGitAdd: undefined,
-		files: ['alpha.txt','bravo.txt'],
+		files: ['alpha.txt', 'bravo.txt'],
 		onlyIn: undefined,
 		blockFiles: ['charlie.js'],
 		allowFiles: [],
@@ -105,5 +104,5 @@ test('Option validator', t=> {
 });
 
 test('Null destination', t => {
-	t.true(['NUL','/dev/null'].indexOf(helpers.getNullDestination())!==-1);
+	t.true(['NUL', '/dev/null'].indexOf(helpers.getNullDestination()) !== -1);
 });

@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 'use strict';
 const meow = require('meow');
+const {validateOptions} = require('./helpers');
 const gitDateExtractor = require('.');
-const { validateOptions } = require('./helpers');
-const { debugLog } = require('./tst-helpers');
 
 const cli = meow(`
 	Usage
@@ -81,17 +80,16 @@ const cli = meow(`
 });
 
 // Files can be passed either through flag OR just as args to cli
-let options = cli.flags;
-let finalizedOptions = validateOptions(options);
-let regularArgs = cli.input;
+const options = cli.flags;
+const finalizedOptions = validateOptions(options);
+const regularArgs = cli.input;
 finalizedOptions.files = finalizedOptions.files.concat(regularArgs);
 
 // Call main with options
-let result = gitDateExtractor.getStamps(finalizedOptions);
-if (!finalizedOptions.outputToFile){
+const result = gitDateExtractor.getStamps(finalizedOptions);
+if (finalizedOptions.outputToFile === false) {
 	console.log(result);
-}
-else {
-	let msg = 'timestamps file updated';
+} else {
+	const msg = 'timestamps file updated';
 	console.log(msg);
 }

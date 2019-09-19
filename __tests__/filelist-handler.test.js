@@ -1,11 +1,11 @@
 /// <reference path="../types.d.ts"/>
 // @ts-check
 import test from 'ava';
+
+const path = require('path');
+const fse = require('fs-extra');
 const FilelistHandler = require('../src/filelist-handler');
 const {replaceInObj, validateOptions, posixNormalize} = require('../src/helpers');
-const fse = require('fs-extra');
-const path = require('path');
-const {debugLog} = require('../src/tst-helpers');
 
 // Set up some paths for testing
 // Test folder will be built in project root to avoid auto-filter based on __tests__ dirname
@@ -31,12 +31,12 @@ const testFiles = {
 	}
 };
 
-const testFilesRelative = replaceInObj(testFiles,function(filePath){
-	return path.normalize(filePath).replace(path.normalize(projectRootPathTrailingSlash),'');
+const testFilesRelative = replaceInObj(testFiles, function(filePath) {
+	return path.normalize(filePath).replace(path.normalize(projectRootPathTrailingSlash), '');
 });
 
 // Create directory and files for testing
-test.before(t => {
+test.before(() => {
 	fse.ensureDirSync(tempDirPath);
 	fse.ensureFileSync(testFiles.alpha);
 	fse.ensureFileSync(testFiles.bravo);
@@ -58,7 +58,7 @@ test('Restricting files by directory (onlyIn)', t => {
 		gitCommitHook: 'none',
 		outputToFile: false,
 		projectRootPath: tempDirPath
-	}
+	};
 	const instance = new FilelistHandler(validateOptions(dummyOptions));
 	const expected = [
 		{
@@ -85,7 +85,7 @@ test('Restrict by directory + allowFiles override', t => {
 		gitCommitHook: 'none',
 		outputToFile: false,
 		projectRootPath: tempDirPath
-	}
+	};
 	const instance = new FilelistHandler(validateOptions(dummyOptions));
 	const expected = [
 		{
@@ -134,7 +134,7 @@ test('Restricting files by explicit file list', t => {
 	t.deepEqual(instance.filePaths, expected);
 });
 
-test('Testing automatic dir parsing and filtering, + block list', t=> {
+test('Testing automatic dir parsing and filtering, + block list', t => {
 	/**
 	 * @type {InputOptions}
 	 */
@@ -164,7 +164,7 @@ test('Testing automatic dir parsing and filtering, + block list', t=> {
 });
 
 // Teardown dir and files
-test.after.always(async t => {
+test.after.always(async () => {
 	// Just delete the top leve dir
 	await fse.emptyDir(tempDirPath);
 	await fse.rmdir(tempDirPath);

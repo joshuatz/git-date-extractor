@@ -1,9 +1,10 @@
 // @ts-check
 import test from 'ava';
-const main = require('../src');
-const fse = require('fs-extra');
+
 const childProc = require('child_process');
-const { posixNormalize } = require('../src/helpers');
+const fse = require('fs-extra');
+const main = require('../src');
+const {posixNormalize} = require('../src/helpers');
 const tstHelpers = require('../src/tst-helpers');
 
 // Set up some paths for testing
@@ -12,34 +13,34 @@ const tempSubDirName = 'subdir';
 const tempDirNames = {
 	mainPostTest: 'tempdir-main-post',
 	mainPreTest: 'tempdir-main-pre'
-}
+};
 
 /**
  * This is really a full integration test
  */
-test('main - integration test - git post commit', async t=> {
+test('main - integration test - git post commit', async t => {
 	// Create test dir
 	const tempDirName = tempDirNames.mainPostTest;
 	const tempDirPath = posixNormalize(__dirname + '/' + tempDirName);
 	const cacheFilePath = posixNormalize(`${tempDirPath}/${cacheFileName}`);
-	const {testFiles} = tstHelpers.buildTestDir(tempDirPath,tempSubDirName,true);
+	const {testFiles} = tstHelpers.buildTestDir(tempDirPath, tempSubDirName, true);
 	const checkTimeDelayMs = 5000;
 	// Git add the files, since we are emulating a post commit
-	childProc.execSync('git add . && git commit -m "added files"',{
+	childProc.execSync('git add . && git commit -m "added files"', {
 		cwd: tempDirPath
 	});
 	// Wait a bit so that we can make sure there is a difference in stamps
-	await (new Promise((res,rej)=>{
-		setTimeout(()=>{
-			res();
-		},checkTimeDelayMs);
+	await (new Promise((resolve) => {
+		setTimeout(() => {
+			resolve();
+		}, checkTimeDelayMs);
 	}));
 	// Touch alpha so it can be re-staged and committed - thus giving it a later modification stamp
-	fse.writeFileSync(testFiles.alpha,'test',{
+	fse.writeFileSync(testFiles.alpha, 'test', {
 		flag: 'a'
 	});
 	// Git commit all the files
-	childProc.execSync('git add . && git commit -m "added files"',{
+	childProc.execSync('git add . && git commit -m "added files"', {
 		cwd: tempDirPath
 	});
 	// Now run full process - get stamps, save to file, etc.
@@ -56,17 +57,17 @@ test('main - integration test - git post commit', async t=> {
 	const result = main.getStamps(dummyOptions);
 	const savedResult = JSON.parse(fse.readFileSync(cacheFilePath).toString());
 	// Check that the value passed back via JS matches what was saved to JSON
-	t.deepEqual(result,savedResult);
+	t.deepEqual(result, savedResult);
 	// Check that last commit was from self
-	t.truthy(tstHelpers.wasLastCommitAutoAddCache(tempDirPath,cacheFileName));
+	t.truthy(tstHelpers.wasLastCommitAutoAddCache(tempDirPath, cacheFileName));
 	// Check that actual numbers came back for stamps
-	let alphaStamp = result['alpha.txt'];
-	t.true(typeof(alphaStamp.created)==='number');
-	t.true(typeof(alphaStamp.modified)==='number');
+	const alphaStamp = result['alpha.txt'];
+	t.true(typeof (alphaStamp.created) === 'number');
+	t.true(typeof (alphaStamp.modified) === 'number');
 	// Important: Check the time difference between file creation and modified. If processor failed, these will be the same due to file stat. If success, then there should be a 10 second diff between creation (file stat) and modified (git add)
 	const timeDelay = Number(alphaStamp.modified) - Number(result['alpha.txt'].created);
 	// Assume a 1 second variance is ok
-	const timeDiff = Math.abs((Math.floor(checkTimeDelayMs/1000)) - timeDelay);
+	const timeDiff = Math.abs((Math.floor(checkTimeDelayMs / 1000)) - timeDelay);
 	t.true(timeDiff <= 1);
 });
 
@@ -74,17 +75,16 @@ test('main - integration test - git pre commit', async t => {
 	// Create test dir
 	const tempDirName = tempDirNames.mainPreTest;
 	const tempDirPath = posixNormalize(__dirname + '/' + tempDirName);
-	const cacheFilePath = posixNormalize(`${tempDirPath}/${cacheFileName}`);
-	const {testFiles} = tstHelpers.buildTestDir(tempDirPath,tempSubDirName,true,cacheFileName);
+	const {testFiles} = tstHelpers.buildTestDir(tempDirPath, tempSubDirName, true, cacheFileName);
 	const checkTimeDelayMs = 3000;
 	// Wait a bit so that we can make sure there is a difference in stamps
-	await (new Promise((res,rej)=>{
-		setTimeout(()=>{
-			res();
-		},checkTimeDelayMs);
+	await (new Promise((resolve) => {
+		setTimeout(() => {
+			resolve();
+		}, checkTimeDelayMs);
 	}));
 	// Touch alpha so that it will have a different mtime value
-	fse.writeFileSync(testFiles.alpha,'test',{
+	fse.writeFileSync(testFiles.alpha, 'test', {
 		flag: 'a'
 	});
 	// Now run full process - get stamps, save to file, etc.
@@ -101,22 +101,24 @@ test('main - integration test - git pre commit', async t => {
 	// Run
 	const result = main.getStamps(dummyOptions);
 	// Now the cache file should be *staged* but **not** committed, since we used `pre`
-	t.falsy(tstHelpers.wasLastCommitAutoAddCache(tempDirPath,cacheFileName));
+	t.falsy(tstHelpers.wasLastCommitAutoAddCache(tempDirPath, cacheFileName));
 	// Check that actual numbers came back for stamps
-	let alphaStamp = result['alpha.txt'];
-	t.true(typeof(alphaStamp.created)==='number');
-	t.true(typeof(alphaStamp.modified)==='number');
+	const alphaStamp = result['alpha.txt'];
+	t.true(typeof (alphaStamp.created) === 'number');
+	t.true(typeof (alphaStamp.modified) === 'number');
 	// Check time difference in stamps. Note that both modified and created stamps should be based off file stat, since no git history has been created
 	const timeDelay = Number(alphaStamp.modified) - Number(result['alpha.txt'].created);
 	// Assume a 1 second variance is ok
-	const timeDiff = Math.abs((Math.floor(checkTimeDelayMs/1000)) - timeDelay);
+	const timeDiff = Math.abs((Math.floor(checkTimeDelayMs / 1000)) - timeDelay);
 	t.true(timeDiff <= 1);
 });
 
 // Teardown dir and files
-test.after.always(async t => {
-	for (var key in tempDirNames){
-		const tempDirPath = posixNormalize(__dirname + '/' + tempDirNames[key]);
+test.after.always(async () => {
+	const dirNames = Object.keys(tempDirNames).map(key => tempDirNames[key]);
+	for (let x = 0; x < dirNames.length; x++) {
+		const tempDirPath = posixNormalize(__dirname + '/' + dirNames[x]);
+		// eslint-disable-next-line no-await-in-loop
 		await tstHelpers.removeTestDir(tempDirPath);
 	}
 });

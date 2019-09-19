@@ -2,7 +2,7 @@
 
 const childProc = require('child_process');
 const fse = require('fs-extra');
-const { replaceZeros, getIsInGitRepo, getIsValidStampVal } = require('./helpers');
+const {replaceZeros, getIsInGitRepo, getIsValidStampVal} = require('./helpers');
 
 /**
 * Updates the timestamp cache file and checks it into source control, depending on settings
@@ -10,14 +10,13 @@ const { replaceZeros, getIsInGitRepo, getIsValidStampVal } = require('./helpers'
 * @param {Object} jsonObj - The updated timestamps JSON to save to file
 * @param {FinalizedOptions} optionsObj - Options
 */
-function updateTimestampsCacheFile(cacheFilePath, jsonObj, optionsObj){
-	const gitCommitHook = optionsObj.gitCommitHook;
+function updateTimestampsCacheFile(cacheFilePath, jsonObj, optionsObj) {
+	const {gitCommitHook} = optionsObj;
 	const gitDir = optionsObj.projectRootPath;
 	let shouldGitAdd = false;
-	if (typeof(optionsObj.outputFileGitAdd)==='boolean'){
+	if (typeof (optionsObj.outputFileGitAdd) === 'boolean') {
 		shouldGitAdd = optionsObj.outputFileGitAdd;
-	}
-	else if (gitCommitHook.toString()!=='none'){
+	} else if (gitCommitHook.toString() !== 'none') {
 		shouldGitAdd = true;
 	}
 	/**
@@ -27,16 +26,16 @@ function updateTimestampsCacheFile(cacheFilePath, jsonObj, optionsObj){
 	/**
 	* Since the timestamps file should be checked into source control, and we just modified it, re-add to commit and amend
 	*/
-	if (shouldGitAdd && getIsInGitRepo(gitDir)){
+	if (shouldGitAdd && getIsInGitRepo(gitDir)) {
 		// Stage the changed file
-		childProc.execSync(`git add ${cacheFilePath}`,{
+		childProc.execSync(`git add ${cacheFilePath}`, {
 			cwd: gitDir
 		});
 		if (gitCommitHook.toString() === 'post') {
 			// Since the commit has already happened, we need to re-stage the changed timestamps file, and then commit it as a new commit
 			// WARNING: We cannot use git commit --amend because that will trigger an endless loop if this file is triggered on a git post-commit loop!
 			// Although the below will trigger the post-commit hook again, the loop should be blocked by the filepath checker at the top of the script that excludes the timestamp JSON file from being tracked
-			childProc.execSync(`git commit -m "AUTO: Updated ${optionsObj.outputFileName}"`,{
+			childProc.execSync(`git commit -m "AUTO: Updated ${optionsObj.outputFileName}"`, {
 				cwd: gitDir
 			});
 		}
@@ -46,23 +45,24 @@ function updateTimestampsCacheFile(cacheFilePath, jsonObj, optionsObj){
 /**
 * Get timestamps for a given file
 * @param {string} fullFilePath - The *full* file path to get stamps for
-* @param {string} [cacheKey] - What is the stamp currently stored under for this file?
 * @param {StampCache} [cache] - Object with key/pair values corresponding to valid stamps
+* @param {string} [cacheKey] - What is the stamp currently stored under for this file?
+* @param {FinalizedOptions} optionsObj - Options
 * @param {boolean} forceCreatedRefresh - If true, any existing created stamps in cache will be ignored, and re-calculated
-* @param {FinalizedOptions} optionsObj
-* @returns {StampObject}
+* @returns {StampObject} - Timestamp object for file
 */
-function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceCreatedRefresh){
-	const gitCommitHook = optionsObj.gitCommitHook;
-	let ignoreCreatedCache = typeof(forceCreatedRefresh)==='boolean' ? forceCreatedRefresh : false;
-	let timestampsCache = typeof(cache)==='object' ? cache : {};
+// eslint-disable-next-line max-params
+function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceCreatedRefresh) {
+	const {gitCommitHook} = optionsObj;
+	const ignoreCreatedCache = typeof (forceCreatedRefresh) === 'boolean' ? forceCreatedRefresh : false;
+	const timestampsCache = typeof (cache) === 'object' ? cache : {};
 	/**
 	 * @type {ChildProcExecOptions}
 	 */
 	const execOptions = {
 		stdio: 'pipe',
 		cwd: optionsObj.projectRootPath
-	}
+	};
 	// Lookup values in cache
 	/**
 	* @type {StampObject}
@@ -74,12 +74,12 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 	};
 	try {
 		/* istanbul ignore else */
-		if (!dateVals.created || ignoreCreatedCache){
+		if (!dateVals.created || ignoreCreatedCache) {
 			// Get the created stamp by looking through log and following history
 			/**
 			* @type {any}
 			*/
-			let createdStamp = childProc.execSync(`git log --pretty=format:%at -- "${fullFilePath}" | tail -n 1`,execOptions).toString();
+			let createdStamp = childProc.execSync(`git log --pretty=format:%at -- "${fullFilePath}" | tail -n 1`, execOptions).toString();
 			createdStamp = Number(createdStamp);
 			if (!getIsValidStampVal(createdStamp) && gitCommitHook.toString() !== 'post') {
 				// During pre-commit, a file could be being added for the first time, so it wouldn't show up in the git log. We'll fall back to OS stats here
@@ -93,7 +93,7 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 		let modifiedStamp = null;
 		if (gitCommitHook === 'none' || gitCommitHook === 'post') {
 			// If this is running after the commit that modified the file, we can use git log to pull the modified time out
-			modifiedStamp = childProc.execSync(`git log --pretty=format:%at --follow -- "${fullFilePath}" | sort | tail -n 1`,execOptions).toString();
+			modifiedStamp = childProc.execSync(`git log --pretty=format:%at --follow -- "${fullFilePath}" | sort | tail -n 1`, execOptions).toString();
 		}
 		modifiedStamp = Number(modifiedStamp);
 		if (gitCommitHook === 'pre' || !getIsValidStampVal(modifiedStamp)) {
@@ -107,12 +107,11 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 		// Check for zero values - this might be the case if there is no git history - new file
 		// If there is a zero, replace with current Unix stamp, but make sure to convert from JS MS to regular S
 		dateVals = replaceZeros(dateVals, Math.floor((new Date()).getTime() / 1000));
-	}
-	catch (e){
+	} catch (error) {
 		/* istanbul ignore next */
 		console.log(`getting git dates failed for ${fullFilePath}`);
 		/* istanbul ignore next */
-		console.error(e);
+		console.error(error);
 	}
 	return dateVals;
 }
@@ -120,4 +119,4 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 module.exports = {
 	updateTimestampsCacheFile,
 	getTimestampsFromFile
-}
+};
