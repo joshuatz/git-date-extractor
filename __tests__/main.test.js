@@ -39,9 +39,7 @@ test('main - integration test - git post commit', async t => {
 		}, checkTimeDelayMs);
 	}));
 	// Touch alpha so it can be re-staged and committed - thus giving it a later modification stamp
-	fse.writeFileSync(testFiles.alpha, 'test', {
-		flag: 'a'
-	});
+	tstHelpers.touchFile(testFiles.alpha);
 	// Git commit all the files
 	childProc.execSync('git add . && git commit -m "added files"', {
 		cwd: tempDirPath
@@ -87,9 +85,7 @@ test('main - integration test - git pre commit', async t => {
 		}, checkTimeDelayMs);
 	}));
 	// Touch alpha so that it will have a different mtime value
-	fse.writeFileSync(testFiles.alpha, 'test', {
-		flag: 'a'
-	});
+	tstHelpers.touchFile(testFiles.alpha);
 	// Now run full process - get stamps, save to file, etc.
 	/**
 	 * @type {InputOptions}

@@ -95,9 +95,27 @@ async function removeTestDir(tempDirPath) {
 	await fse.rmdir(tempDirPath);
 }
 
+/**
+ * Touch a file (change mtime)
+ * @param {string} filePath - File to "touch"
+ * @returns {void}
+ */
+function touchFile(filePath) {
+	const now = new Date();
+	try {
+		fse.utimesSync(filePath, now, now);
+	} catch (error) {
+		fse.closeSync(fse.openSync(filePath, 'w'));
+	}
+	fse.writeFileSync(filePath, 'test', {
+		flag: 'a'
+	});
+}
+
 module.exports = {
 	wasLastCommitAutoAddCache,
 	debugLog,
 	buildTestDir,
-	removeTestDir
+	removeTestDir,
+	touchFile
 };
