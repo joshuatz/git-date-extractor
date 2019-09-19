@@ -75,7 +75,7 @@ test('main - integration test - git pre commit', async t => {
 	const tempDirName = tempDirNames.mainPreTest;
 	const tempDirPath = posixNormalize(__dirname + '/' + tempDirName);
 	const cacheFilePath = posixNormalize(`${tempDirPath}/${cacheFileName}`);
-	const {testFiles} = tstHelpers.buildTestDir(tempDirPath,tempSubDirName,true);
+	const {testFiles} = tstHelpers.buildTestDir(tempDirPath,tempSubDirName,true,cacheFileName);
 	const checkTimeDelayMs = 3000;
 	// Wait a bit so that we can make sure there is a difference in stamps
 	await (new Promise((res,rej)=>{

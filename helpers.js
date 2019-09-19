@@ -62,6 +62,10 @@ function _validateOptions(input){
 			moddedOptions.outputFileName = posixNormalize(`${moddedOptions.projectRootPath}/${moddedOptions.outputFileName}`);
 		}
 	}
+	// Default git commit hook selection
+	if (typeof(moddedOptions.gitCommitHook)!=='string'){
+		moddedOptions.gitCommitHook = 'none';
+	}
 	// Reset invalid git commit hook selection
 	if (typeof(moddedOptions.gitCommitHook)==='string' && ['pre','post','none'].indexOf(moddedOptions.gitCommitHook)===-1){
 		moddedOptions.gitCommitHook = 'none';
@@ -83,6 +87,9 @@ function _validateOptions(input){
 	if (!Array.isArray(moddedOptions.files)){
 		// Reminder: An empty files array means that all files within the project space will be scanned!
 		moddedOptions.files = [];
+	}
+	if (!Array.isArray(moddedOptions.allowFiles)){
+		moddedOptions.allowFiles = [];
 	}
 	// Debug - only allow for dev, and allow override
 	/* istanbul ignore if */
@@ -195,6 +202,20 @@ function getIsValidStampVal(stampInt){
 	return true;
 }
 
+/**
+ *
+ * @param {object} objA
+ * @param {object} objB
+ */
+function lazyAreObjsSame(objA,objB){
+	if (JSON.stringify(objA) === JSON.stringify(objB)){
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 // @todo this is probably going to need to be revised
 let projectRootPath = isInNodeModules() ? posixNormalize(path.normalize(`${__dirname}/../..`)) : posixNormalize(`${__dirname}`);
 const callerDir = posixNormalize(process.cwd());
@@ -252,5 +273,6 @@ module.exports = {
 	extractArrFromStr,
 	getNullDestination,
 	nullDestination,
-	getIsValidStampVal
+	getIsValidStampVal,
+	lazyAreObjsSame
 }

@@ -73,6 +73,37 @@ test('Restricting files by directory (onlyIn)', t => {
 	t.deepEqual(instance.filePaths, expected);
 });
 
+test('Restrict by directory + allowFiles override', t => {
+	// Without the use of allowFiles, normally alpha.txt would be blocked by the onlyIn option, since it is not in the subdir
+	/**
+	 * @type {InputOptions}
+	 */
+	const dummyOptions = {
+		onlyIn: [tempSubDirPath],
+		files: [testFiles.alpha, testFiles.subdir.delta, testFiles.subdir.echo],
+		allowFiles: 'alpha.txt',
+		gitCommitHook: 'none',
+		outputToFile: false,
+		projectRootPath: tempDirPath
+	}
+	const instance = new FilelistHandler(validateOptions(dummyOptions));
+	const expected = [
+		{
+			fullPath: path.normalize(testFiles.alpha),
+			relativeToProjRoot: testFilesRelative.alpha
+		},
+		{
+			fullPath: path.normalize(testFiles.subdir.delta),
+			relativeToProjRoot: testFilesRelative.subdir.delta
+		},
+		{
+			fullPath: path.normalize(testFiles.subdir.echo),
+			relativeToProjRoot: testFilesRelative.subdir.echo
+		}
+	];
+	t.deepEqual(instance.filePaths, expected);
+});
+
 test('Restricting files by explicit file list', t => {
 	/**
 	 * @type {InputOptions}

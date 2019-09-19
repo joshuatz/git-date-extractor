@@ -26,22 +26,30 @@ let FilelistHandler = (function(){
 	* @param {FinalizedOptions} optionsObj
 	*/
 	function FilelistHandlerInner(optionsObj){
-		// debugLog(optionsObj);
 		this.inputOptions = optionsObj;
 		/**
 		* @type Array<{relativeToProjRoot:string, fullPath: string}>
 		*/
 		this.filePaths = [];
+
 		// Parse filter options
-		this.contentDirs = Array.isArray(this.inputOptions.onlyIn) && this.inputOptions.onlyIn.length > 0  ? this.inputOptions.onlyIn : [optionsObj.projectRootPath];
+		/**
+		 * Construct a list of directories that will be scanned for files
+		 * If
+		 */
+		this.contentDirs = [optionsObj.projectRootPath];
+		if (Array.isArray(optionsObj.onlyIn) && optionsObj.onlyIn.length > 0){
+			this.contentDirs = optionsObj.onlyIn;
+		}
 		this.fullPathContentDirs = this.contentDirs.map(function(pathStr){
 			return path.normalize(getIsRelativePath(pathStr) ? (optionsObj.projectRootPath + '/' + pathStr) : pathStr);
 		});
-		this.alwaysAllowFileNames = Array.isArray(this.inputOptions.allowFiles) && this.inputOptions.allowFiles.length > 0 ? this.inputOptions.allowFiles : [];
+
+		this.alwaysAllowFileNames = optionsObj.allowFiles;
 		this.alwaysAllowFilePaths = this.alwaysAllowFileNames.map(function(pathStr){
 			return path.normalize(getIsRelativePath(pathStr) ? (optionsObj.projectRootPath + '/' + pathStr) : pathStr);
 		});
-		this.restrictByDir = Array.isArray(this.inputOptions.onlyIn) && this.inputOptions.onlyIn.length > 0;
+		this.restrictByDir = Array.isArray(optionsObj.onlyIn) && optionsObj.onlyIn.length > 0;
 		this.usesCache = typeof(optionsObj.outputFileName)==='string';
 		this.usesBlockFiles = Array.isArray(optionsObj.blockFiles) && optionsObj.blockFiles.length > 0;
 		// Process input files
@@ -50,38 +58,42 @@ let FilelistHandler = (function(){
 			filePath = path.normalize(getIsRelativePath(filePath) ? (optionsObj.projectRootPathTrailingSlash + filePath) : filePath);
 			this.pushFilePath(filePath, true);
 		}
-		// If no files were explicitly passed in through options...
-		if (this.filePaths.length === 0){
+		/**
+		 * If no files were passed through the explicit "files" option, this block will walk through directories to scan for files
+		 */
+		if (optionsObj.files.length === 0){
 			// Get *all* files contained within content dirs
-			// debugLog(this.fullPathContentDirs);
+			// Iterate over all dirs of interest
 			for (let x = 0; x < this.fullPathContentDirs.length; x++) {
 				let fullContentDirPath = this.fullPathContentDirs[x];
+				// Walk the dir and built paths
 				let paths = walkdir.sync(fullContentDirPath,function(pathStr,stat){
 					const pathDirName = path.basename(pathStr);
-					// debugLog(pathDirName);
+					let blocked = false;
 					// Check internal block list of directories
 					if (internalDirBlockList.indexOf(pathDirName)!==-1){
+						blocked = true;
+					}
+					if (!blocked){
+						for (let db=0; db < internalDirBlockPatterns.length; db++){
+							if (internalDirBlockPatterns[db].test(pathDirName)){
+								blocked = true;
+								break;
+								// debugLog('Blocked based on DirBlockPatt - ' + pathDirName);
+							}
+						}
+					}
+					if (blocked){
 						this.ignore(pathStr);
 					}
-					for (let db=0; db < internalDirBlockPatterns.length; db++){
-						let blocked = false;
-						if (internalDirBlockPatterns[db].test(pathDirName)){
-							blocked = true;
-							// debugLog('Blocked based on DirBlockPatt - ' + pathDirName);
-						}
-						if (blocked){
-							this.ignore(pathStr);
-							break;
-						}
-					}
 				});
+				// Walk the individual files and check
 				for (let p = 0; p < paths.length; p++) {
 					let blocked = false;
 					const fileOrDirName = path.basename(paths[p]);
 					for (let b=0; b<internalFileBlockPatterns.length; b++){
 						if (internalFileBlockPatterns[b].test(fileOrDirName)){
 							blocked = true;
-							// debugLog('blocked based on fileBlockPatt - ' + fileOrDirName);
 							break;
 						}
 					}
@@ -97,13 +109,26 @@ let FilelistHandler = (function(){
 		}
 	}
 	/**
+	 * Checks if a file is on the allowFiles list (aka the whitelist)
+	 * @param {string} filePath
+	 */
+	FilelistHandlerInner.prototype.getIsFileOnWhitelist = function(filePath){
+		const fileName = path.basename(filePath);
+		if (this.alwaysAllowFileNames.indexOf(fileName)!==-1){
+			return true;
+		}
+		if (this.alwaysAllowFilePaths.indexOf(filePath)!==-1){
+			return true;
+		}
+		return false;
+	}
+	/**
 	* Add a file to the queue of file paths to retrieve dates for
 	* @param {string} filePath  - The path of the file
 	* @param {boolean} [checkExists]  - If the func should check that the file actually exists before adding
 	*/
 	FilelistHandlerInner.prototype.pushFilePath = function(filePath,checkExists){
 		if (this.getShouldTrackFile(filePath,checkExists)){
-			// debugLog(this.inputOptions.projectRootPathTrailingSlash);
 			this.filePaths.push({
 				relativeToProjRoot: path.normalize(filePath).replace(path.normalize(this.inputOptions.projectRootPathTrailingSlash), ''),
 				fullPath: filePath
@@ -122,7 +147,7 @@ let FilelistHandler = (function(){
 		filePath = posixNormalize(filePath);
 		const fileName = path.basename(filePath);
 		checkExists = typeof (checkExists) === "boolean" ? checkExists : false;
-		// Block tracking the actual timestamps file
+		// Block tracking the actual timestamps file - IMPORTANT: blocks hook loop!
 		if (this.usesCache && filePath.indexOf(posixNormalize(this.inputOptions.outputFileName)) !== -1) {
 			// Only let this be overrwritten by allowFiles whitelist if gitcommithook is equal to 'none' or unset
 			if (this.inputOptions.gitCommitHook==='pre' || this.inputOptions.gitCommitHook==='post'){
@@ -138,6 +163,7 @@ let FilelistHandler = (function(){
 				let fullContentDirPath = this.fullPathContentDirs[x];
 				if (filePath.indexOf(posixNormalize(fullContentDirPath)) !== -1) {
 					found = true;
+					break;
 				}
 			}
 			if (!found) {
@@ -163,10 +189,7 @@ let FilelistHandler = (function(){
 		}
 		if (shouldBlock){
 			// Let  override with allowFiles
-			if (this.alwaysAllowFileNames.indexOf(fileName)!==-1){
-				return true;
-			}
-			else if (this.alwaysAllowFilePaths.indexOf(filePath)!==-1){
+			if (this.getIsFileOnWhitelist(filePath)){
 				return true;
 			}
 			else {

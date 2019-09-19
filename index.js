@@ -1,7 +1,7 @@
 // @ts-check
 'use strict';
 
-const {posixNormalize, replaceZeros, getIsInGitRepo, projectRootPath, validateOptions} = require('./helpers');
+const {posixNormalize, replaceZeros, getIsInGitRepo, projectRootPath, validateOptions, lazyAreObjsSame} = require('./helpers');
 const { updateTimestampsCacheFile, getTimestampsFromFile } = require('./stamp-handler');
 const FilelistHandler = require('./filelist-handler');
 
@@ -30,6 +30,8 @@ function main(options){
 	*/
 	let timestampsCache = {};
 	let readCacheFile = typeof(optionsObj.outputFileName)==='string' && optionsObj.outputFileName.length > 0;
+	let readCacheFileSuccess = false;
+	let readCacheFileContents = {};
 	let writeCacheFile = readCacheFile && optionsObj.outputToFile;
 	// Load in cache if applicable
 	if (readCacheFile){
@@ -39,6 +41,8 @@ function main(options){
 		else {
 			try {
 				timestampsCache = JSON.parse(fse.readFileSync(optionsObj.outputFileName).toString());
+				readCacheFileSuccess = true;
+				readCacheFileContents = JSON.parse(JSON.stringify(timestampsCache));
 			}
 			catch (e){
 				console.warn(`Could not read in cache file @ ${optionsObj.outputFileName}`)
@@ -58,14 +62,18 @@ function main(options){
 		let currFullPath = filePaths[f].fullPath;
 		let currLocalPath = filePaths[f].relativeToProjRoot;
 		// Nice progress indicator in console
+		const consoleMsg = `Scraping Date info for file #${f + 1} / ${filePaths.length} ---> ${currLocalPath}`;
 		if (process.stdout && readline) {
 			readline.clearLine(process.stdout, 0);
 			readline.cursorTo(process.stdout, 0, null);
-			process.stdout.write(`Scraping Date info for file #${f + 1} / ${filePaths.length} ---> ${currLocalPath}`);
+			process.stdout.write(consoleMsg);
 			// If this is the last loop, close out the line with a newline
 			if (f === filePaths.length - 1) {
 				process.stdout.write('\n');
 			}
+		}
+		else {
+			console.log(consoleMsg);
 		}
 		// Normalize path, force to posix style forward slash
 		currFullPath = posixNormalize(currFullPath);
@@ -74,7 +82,13 @@ function main(options){
 		timestampsCache[currLocalPath] = getTimestampsFromFile(currFullPath, timestampsCache, currLocalPath, optionsObj, false);
 	}
 	if (writeCacheFile){
-		updateTimestampsCacheFile(optionsObj.outputFileName, timestampsCache, optionsObj);
+		// Check for diff
+		if (!readCacheFileSuccess || !lazyAreObjsSame(readCacheFileContents,timestampsCache)){
+			updateTimestampsCacheFile(optionsObj.outputFileName, timestampsCache, optionsObj);
+		}
+		else {
+			console.log('Saving of timestamps file skipped - nothing changed');
+		}
 	}
 	return timestampsCache;
 }

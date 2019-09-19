@@ -11,9 +11,15 @@ const { replaceZeros, getIsInGitRepo, getIsValidStampVal } = require('./helpers'
 * @param {FinalizedOptions} optionsObj - Options
 */
 function updateTimestampsCacheFile(cacheFilePath, jsonObj, optionsObj){
-	const shouldGitAdd = typeof(optionsObj.outputFileGitAdd)==='boolean' ? optionsObj.outputFileGitAdd : true;
-	const gitDir = optionsObj.projectRootPath;
 	const gitCommitHook = optionsObj.gitCommitHook;
+	const gitDir = optionsObj.projectRootPath;
+	let shouldGitAdd = false;
+	if (typeof(optionsObj.outputFileGitAdd)==='boolean'){
+		shouldGitAdd = optionsObj.outputFileGitAdd;
+	}
+	else if (gitCommitHook.toString()!=='none'){
+		shouldGitAdd = true;
+	}
 	/**
 	* Save back updated timestamps to file
 	*/
@@ -67,6 +73,7 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 		modified: 0
 	};
 	try {
+		/* istanbul ignore else */
 		if (!dateVals.created || ignoreCreatedCache){
 			// Get the created stamp by looking through log and following history
 			/**

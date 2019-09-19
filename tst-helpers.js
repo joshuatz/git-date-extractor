@@ -28,6 +28,7 @@ function wasLastCommitAutoAddCache(gitDir,cacheFileName){
 
 /* istanbul ignore next */
 function debugLog(msg){
+	console.log(msg);
 	if (typeof(msg)==='object'){
 		msg = JSON.stringify(msg);
 	}
@@ -42,7 +43,14 @@ function debugLog(msg){
 	})
 }
 
-function buildTestDir(tempDirPath,tempSubDirName,gitInit){
+/**
+ *
+ * @param {string} tempDirPath
+ * @param {string} tempSubDirName
+ * @param {boolean} gitInit
+ * @param {string} [cacheFileName]
+ */
+function buildTestDir(tempDirPath,tempSubDirName,gitInit,cacheFileName){
 	const testFiles = {
 		alpha: `${tempDirPath}/alpha.txt`,
 		bravo: `${tempDirPath}/bravo.txt`,
@@ -63,7 +71,11 @@ function buildTestDir(tempDirPath,tempSubDirName,gitInit){
 	fse.ensureDirSync(`${tempDirPath}/${tempSubDirName}`);
 	fse.ensureFileSync(testFiles.subdir.delta);
 	fse.ensureFileSync(testFiles.subdir.echo);
+	if (typeof(cacheFileName)==='string'){
+		fse.ensureFileSync(`${tempDirPath}/${cacheFileName}`);
+	}
 	const stamp = Math.floor((new Date()).getTime()/1000);
+	/* istanbul ignore else */
 	if (gitInit){
 		childProc.execSync(`git init`,{
 			cwd: tempDirPath

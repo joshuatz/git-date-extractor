@@ -3,6 +3,7 @@
 const meow = require('meow');
 const gitDateExtractor = require('.');
 const { validateOptions } = require('./helpers');
+const { debugLog } = require('./tst-helpers');
 
 const cli = meow(`
 	Usage
@@ -12,12 +13,12 @@ const cli = meow(`
 	Options (all are optional):
 	  --outputToFile {boolean} [Default: false]
 	  --outputFileName {string} [Default: timestamps.json]
-	  --outputFileGitAdd {boolean} [Default: true]
+	  --outputFileGitAdd {boolean} [Default: false*] *default=true if gitCommitHook is set
 	  --files {string[] | string}
 	  --onlyIn {string[] | string}
 	  --blockFiles {string[] | string}
 	  --allowFiles {string[] | string}
-	  --gitCommitHook {"post" | "pre" | "none"}
+	  --gitCommitHook {"post" | "pre" | "none"} [Default: "none"]
 	  --projectRootPath {string}
 
 	Examples
@@ -33,16 +34,18 @@ const cli = meow(`
 	flags: {
 		outputToFile: {
 			type: 'boolean',
-			default: false
+			default: false,
+			alias: 'out'
 		},
 		outputFileName: {
 			type: 'string',
 			default: undefined,
-			alias: 'out-file-name'
+			alias: 'outFile'
 		},
 		outputFileGitAdd: {
 			type: 'boolean',
 			default: undefined,
+			alias: 'gitAdd'
 		},
 		files: {
 			type: 'string',

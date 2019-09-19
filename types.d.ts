@@ -1,4 +1,4 @@
-type GitCommitHook = "pre" | "post" | "none" | null | undefined;
+type GitCommitHook = "pre" | "post" | "none";
 
 interface StampObject {
     // the stamp of when the file was created
@@ -38,7 +38,7 @@ interface FinalizedOptions {
     files: string[],
     onlyIn?: string[],
 	blockFiles?: string[],
-	allowFiles?: string[],
+	allowFiles: string[],
 	gitCommitHook: GitCommitHook,
 	projectRootPath: string,
 	projectRootPathTrailingSlash: string,
