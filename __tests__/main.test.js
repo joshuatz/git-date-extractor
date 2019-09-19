@@ -39,7 +39,7 @@ test('main - integration test - git post commit', async t => {
 		}, checkTimeDelayMs);
 	}));
 	// Touch alpha so it can be re-staged and committed - thus giving it a later modification stamp
-	tstHelpers.touchFile(testFiles.alpha);
+	tstHelpers.touchFileSync(testFiles.alpha);
 	// Git commit all the files
 	childProc.execSync('git add . && git commit -m "added files"', {
 		cwd: tempDirPath
@@ -66,7 +66,7 @@ test('main - integration test - git post commit', async t => {
 	t.true(typeof (alphaStamp.created) === 'number');
 	t.true(typeof (alphaStamp.modified) === 'number');
 	// Important: Check the time difference between file creation and modified. If processor failed, these will be the same due to file stat. If success, then there should be a 10 second diff between creation (file stat) and modified (git add)
-	const timeDelay = Number(alphaStamp.modified) - Number(result['alpha.txt'].created);
+	const timeDelay = Number(alphaStamp.modified) - Number(alphaStamp.created);
 	// Assume a small variance is OK
 	const timeDiff = Math.abs((Math.floor(checkTimeDelayMs / 1000)) - timeDelay);
 	t.true(timeDiff <= maxTimeVarianceSec, `Diff between created and modified should have been ${Math.floor(checkTimeDelayMs / 1000)}, but was ${timeDelay}. This variance of ${timeDiff} is beyond the accepted variance of ${maxTimeVarianceSec}.`);
@@ -85,7 +85,7 @@ test('main - integration test - git pre commit', async t => {
 		}, checkTimeDelayMs);
 	}));
 	// Touch alpha so that it will have a different mtime value
-	tstHelpers.touchFile(testFiles.alpha);
+	tstHelpers.touchFileSync(testFiles.alpha);
 	// Now run full process - get stamps, save to file, etc.
 	/**
 	 * @type {InputOptions}
@@ -106,7 +106,7 @@ test('main - integration test - git pre commit', async t => {
 	t.true(typeof (alphaStamp.created) === 'number');
 	t.true(typeof (alphaStamp.modified) === 'number');
 	// Check time difference in stamps. Note that both modified and created stamps should be based off file stat, since no git history has been created
-	const timeDelay = Number(alphaStamp.modified) - Number(result['alpha.txt'].created);
+	const timeDelay = Number(alphaStamp.modified) - Number(alphaStamp.created);
 	// Assume a small variance is OK
 	const timeDiff = Math.abs((Math.floor(checkTimeDelayMs / 1000)) - timeDelay);
 	t.true(timeDiff <= maxTimeVarianceSec, `Diff between created and modified should have been ${Math.floor(checkTimeDelayMs / 1000)}, but was ${timeDelay}. This variance of ${timeDiff} is beyond the accepted variance of ${maxTimeVarianceSec}.`);

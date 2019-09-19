@@ -27,7 +27,7 @@ function wasLastCommitAutoAddCache(gitDir, cacheFileName) {
 }
 
 /* istanbul ignore next */
-function debugLog(msg) {
+function iDebugLog(msg) {
 	console.log(msg);
 	if (typeof (msg) === 'object') {
 		msg = JSON.stringify(msg);
@@ -96,26 +96,32 @@ async function removeTestDir(tempDirPath) {
 }
 
 /**
- * Touch a file (change mtime)
+ * Touch a file (change mtime and add text)
  * @param {string} filePath - File to "touch"
  * @returns {void}
  */
-function touchFile(filePath) {
-	const now = new Date();
-	try {
-		fse.utimesSync(filePath, now, now);
-	} catch (error) {
-		fse.closeSync(fse.openSync(filePath, 'w'));
+function touchFileSync(filePath) {
+	if (parseFloat(process.versions.node) < 9) {
+		// Force!
+		childProc.execSync(`touch ${filePath}`);
+	} else {
+		const now = new Date();
+		try {
+			fse.utimesSync(filePath, now, now);
+		} catch (error) {
+			fse.closeSync(fse.openSync(filePath, 'w'));
+		}
 	}
-	fse.writeFileSync(filePath, 'test', {
+	// Make sure to actually change file contents to trigger git
+	fse.writeFileSync(filePath, '-', {
 		flag: 'a'
 	});
 }
 
 module.exports = {
 	wasLastCommitAutoAddCache,
-	debugLog,
+	iDebugLog,
 	buildTestDir,
 	removeTestDir,
-	touchFile
+	touchFileSync
 };
