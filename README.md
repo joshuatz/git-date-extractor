@@ -191,3 +191,6 @@ Here is how I have this setup as a pre-commit hook. This is a little over-compli
 # Get list of changed files - everything but "deletes"
 git diff --cached --name-only --diff-filter=ACMRTUXB | xargs git-date-extractor --gitCommitHook=pre --onlyIn=[md,images] --allowFiles=[README.md] --outputToFile=true --outputFileName=timestamps-cache.json
 ```
+
+## Portfolio / Project Page
+https://joshuatz.com/projects/applications/git-date-extractor-npm-package-and-cli-tool/

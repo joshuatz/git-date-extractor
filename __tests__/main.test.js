@@ -15,6 +15,9 @@ const tempDirNames = {
 	mainPreTest: 'tempdir-main-pre'
 };
 
+// Max variance for time diff
+const maxTimeVarianceSec = 2;
+
 /**
  * This is really a full integration test
  */
@@ -66,9 +69,9 @@ test('main - integration test - git post commit', async t => {
 	t.true(typeof (alphaStamp.modified) === 'number');
 	// Important: Check the time difference between file creation and modified. If processor failed, these will be the same due to file stat. If success, then there should be a 10 second diff between creation (file stat) and modified (git add)
 	const timeDelay = Number(alphaStamp.modified) - Number(result['alpha.txt'].created);
-	// Assume a 1 second variance is ok
+	// Assume a small variance is OK
 	const timeDiff = Math.abs((Math.floor(checkTimeDelayMs / 1000)) - timeDelay);
-	t.true(timeDiff <= 1);
+	t.true(timeDiff <= maxTimeVarianceSec, `Diff between created and modified should have been ${checkTimeDelayMs}, but was ${timeDiff}. This is beyond the accepted variance of ${maxTimeVarianceSec}.`);
 });
 
 test('main - integration test - git pre commit', async t => {
@@ -108,9 +111,9 @@ test('main - integration test - git pre commit', async t => {
 	t.true(typeof (alphaStamp.modified) === 'number');
 	// Check time difference in stamps. Note that both modified and created stamps should be based off file stat, since no git history has been created
 	const timeDelay = Number(alphaStamp.modified) - Number(result['alpha.txt'].created);
-	// Assume a 1 second variance is ok
+	// Assume a small variance is OK
 	const timeDiff = Math.abs((Math.floor(checkTimeDelayMs / 1000)) - timeDelay);
-	t.true(timeDiff <= 1);
+	t.true(timeDiff <= maxTimeVarianceSec, `Diff between created and modified should have been ${checkTimeDelayMs}, but was ${timeDiff}. This is beyond the accepted variance of ${maxTimeVarianceSec}.`);
 });
 
 // Teardown dir and files
