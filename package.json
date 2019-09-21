@@ -38,11 +38,12 @@
 		"walkdir": "^0.4.1"
 	},
 	"devDependencies": {
+		"@types/fs-extra": "^8.0.0",
+		"@types/node": "^12.7.5",
 		"ava": "^2.1.0",
 		"codecov": "^3.5.0",
 		"nyc": "^14.1.1",
-		"xo": "^0.24.0",
-		"@types/node": "^12.7.5"
+		"xo": "^0.24.0"
 	},
 	"nyc": {
 		"reporter": [
@@ -61,7 +62,8 @@
 			"no-useless-escape": "off",
 			"camelcase": "off",
 			"complexity": "off",
-			"arrow-parens": "off"
+			"arrow-parens": "off",
+			"brace-style": "off"
 		}
 	}
 }

@@ -2,7 +2,7 @@
 
 const childProc = require('child_process');
 const fse = require('fs-extra');
-const {replaceZeros, getIsInGitRepo, getIsValidStampVal} = require('./helpers');
+const {replaceZeros, getIsInGitRepo, getIsValidStampVal, getFsBirth} = require('./helpers');
 
 /**
 * Updates the timestamp cache file and checks it into source control, depending on settings
@@ -57,7 +57,7 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 	const ignoreCreatedCache = typeof (forceCreatedRefresh) === 'boolean' ? forceCreatedRefresh : false;
 	const timestampsCache = typeof (cache) === 'object' ? cache : {};
 	/**
-	 * @type {ChildProcExecOptions}
+	 * @type {object}
 	 */
 	const execOptions = {
 		stdio: 'pipe',
@@ -83,7 +83,8 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 			createdStamp = Number(createdStamp);
 			if (!getIsValidStampVal(createdStamp) && gitCommitHook.toString() !== 'post') {
 				// During pre-commit, a file could be being added for the first time, so it wouldn't show up in the git log. We'll fall back to OS stats here
-				createdStamp = Math.floor(fse.statSync(fullFilePath).birthtimeMs / 1000);
+				// createdStamp = Math.floor(fse.statSync(fullFilePath).birthtimeMs / 1000);
+				createdStamp = getFsBirth(fullFilePath).birthtime;
 			}
 			if (Number.isNaN(createdStamp) === false) {
 				dateVals.created = createdStamp;

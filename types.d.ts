@@ -1,3 +1,5 @@
+/// <reference types="node"/>
+
 type GitCommitHook = "pre" | "post" | "none";
 
 interface StampObject {
@@ -43,9 +45,4 @@ interface FinalizedOptions {
 	projectRootPath: string,
 	projectRootPathTrailingSlash: string,
 	debug: boolean
-}
-
-// Dummy interface to get around weird VSCode issue not picking up type def file
-interface ChildProcExecOptions extends ExecSyncOptions {
-	//
 }

@@ -96,15 +96,22 @@ async function removeTestDir(tempDirPath) {
 }
 
 /**
- * Touch a file (change mtime and add text)
+ * Touch a file (change mtime and/or add text)
  * @param {string} filePath - File to "touch"
+ * @param {boolean} byAppending - By appending text
  * @returns {void}
  */
-function touchFileSync(filePath) {
-	if (parseFloat(process.versions.node) < 9) {
-		// Force!
-		childProc.execSync(`touch ${filePath}`);
-	} else {
+function touchFileSync(filePath, byAppending) {
+	if (byAppending === true) {
+		// Make sure to actually change file contents to trigger git
+		fse.writeFileSync(filePath, 'TOUCHED', {
+			flag: 'a'
+		});
+	}
+	else if (parseFloat(process.versions.node) < 9) {
+		childProc.execSync(`touch ${filePath} -m`);
+	}
+	else {
 		const now = new Date();
 		try {
 			fse.utimesSync(filePath, now, now);
@@ -112,10 +119,6 @@ function touchFileSync(filePath) {
 			fse.closeSync(fse.openSync(filePath, 'w'));
 		}
 	}
-	// Make sure to actually change file contents to trigger git
-	fse.writeFileSync(filePath, '-', {
-		flag: 'a'
-	});
 }
 
 module.exports = {

@@ -1,8 +1,11 @@
+/// <reference path="../types.d.ts"/>
 // @ts-check
 'use strict';
 
 const path = require('path');
 const childProc = require('child_process');
+const os = require('os');
+const fse = require('fs-extra');
 
 /**
 * Normalizes and forces a filepath to the forward slash variant
@@ -218,6 +221,152 @@ function lazyAreObjsSame(objA, objB) {
 	return false;
 }
 
+/**
+ * Get the lowest num out of array of nums
+ * @param {number[]} numArr - array of numbers
+ * @returns {number} - lowest number in arr
+ */
+function getLowest(numArr) {
+	return numArr.sort((a, n) => {
+		return a - n;
+	})[0];
+}
+
+/**
+ * Get the highest num out of array of nums
+ * @param {number[]} numArr - array of numbers
+ * @returns {number} - highest number in arr
+ */
+function getHighest(numArr) {
+	return numArr.sort((a, n) => {
+		return n - a;
+	})[0];
+}
+
+/**
+ * Get the highest and lowest stamps from FS Stats
+ * @param {object} stats - FS Stats object
+ * @returns {object} - Highest and lowest points
+ */
+function getEndOfRangeFromStat(stats) {
+	const lowestMs = getLowest([
+		stats.birthtimeMs,
+		stats.atimeMs,
+		stats.ctimeMs,
+		stats.mtimeMs
+	]);
+	const highestMs = getHighest([
+		stats.birthtimeMs,
+		stats.atimeMs,
+		stats.ctimeMs,
+		stats.mtimeMs
+	]);
+	return {
+		lowestMs,
+		highestMs
+	};
+}
+
+/**
+ * @typedef {Object<string, any>} BirthStamps
+ * @property {number} birthtimeMs - Birth time in MS since Epoch
+ * @property {number} birthtime - Birth time in sec since Epoch
+ * @property {string} source - Where did the info come from
+ */
+
+/**
+ * Get the birth times of a file
+ * @param {string} filePath - The filepath of the file to get birth of
+ * @param {boolean} [preferNative] - Prefer using Node FS - don't try for debugfs
+ * @param {object} [OPT_fsStats] - Stats object, if you already have it ready
+ * @returns {BirthStamps} - Birth stamps
+ */
+function getFsBirth(filePath, preferNative, OPT_fsStats) {
+	const birthStamps = {
+		birthtime: null,
+		birthtimeMs: null,
+		source: 'fs',
+		errorMsg: ''
+	};
+	let fsStats;
+	// Check for passed in value
+	if (typeof (fsStats) === 'object' && 'birthtimeMs' in fsStats) {
+		fsStats = OPT_fsStats;
+	} else {
+		fsStats = fse.statSync(filePath);
+	}
+	if (parseFloat(process.versions.node) > 9 || preferNative || process.platform === 'win32') {
+		// Just use FS
+		birthStamps.birthtimeMs = Math.round(getEndOfRangeFromStat(fsStats).lowestMs);
+		birthStamps.birthtime = Math.round(birthStamps.birthtimeMs / 1000);
+	} else {
+		let success = true;
+		// There is likely going to be an issue where mtime = birthtime, regardless of creation. Workaround hack:
+		try {
+			// Grab inode number, and device
+			const inode = fsStats.ino;
+			const deviceStr = /Device:\s{0,1}([a-zA-Z0-9\/]+)/.exec(childProc.execSync(`stat ${filePath}`).toString())[1];
+			// Make call to debugfs
+			const debugFsInfo = childProc.execSync(`debugfs -R 'stat <${inode}> --format=%W' ${deviceStr}`, {
+				stdio: 'pipe'
+			}).toString();
+			// Parse for timestamp
+			const birthTimeSec = parseInt(debugFsInfo, 10);
+			if (!Number.isNaN(birthTimeSec) && birthTimeSec !== 0) {
+				// Success!
+				birthStamps.birthtime = birthTimeSec;
+				birthStamps.birthtimeMs = birthTimeSec * 1000;
+				birthStamps.source = 'debugfs';
+				success = true;
+			} else {
+				// Bad - we still get back either 0 as birthTime, or bad string
+				birthStamps.errorMsg = debugFsInfo;
+				success = false;
+			}
+		} catch (error) {
+			success = false;
+			birthStamps.errorMsg = error.toString();
+		}
+		if (!success) {
+			// Fallback to fs
+			return getFsBirth(filePath, true, fsStats);
+		}
+	}
+	return birthStamps;
+}
+
+/**
+ * @typedef {Object<string,any>} KernelInfo
+ * @property {number} base
+ * @property {number} major
+ * @property {number} minor
+ * @property {number} patch
+ */
+/**
+ * Get kernel version of OS (or v # in case of Win)
+ * @returns {KernelInfo} - Kernel #
+ */
+function getKernelInfo() {
+	const info = {
+		base: 0,
+		major: 0,
+		minor: 0,
+		patch: 0
+	};
+	const kString = os.release();
+	const chunks = kString.split('-');
+	if (/(\d+)\.(\d+)\.(\d+)/.test(chunks[0])) {
+		const vChunks = chunks[0].split('.');
+		info.base = parseInt(vChunks[0], 10);
+		info.major = parseInt(vChunks[1], 10);
+		info.minor = parseInt(vChunks[2], 10);
+	}
+	if (/\d+/.test(chunks[1])) {
+		info.patch = parseInt(chunks[1], 10);
+	}
+	return info;
+}
+
 // @todo this is probably going to need to be revised
 let projectRootPath = isInNodeModules() ? posixNormalize(path.normalize(`${__dirname}/../..`)) : posixNormalize(`${__dirname}`);
 const callerDir = posixNormalize(process.cwd());
@@ -276,5 +425,7 @@ module.exports = {
 	getNullDestination,
 	nullDestination,
 	getIsValidStampVal,
-	lazyAreObjsSame
+	lazyAreObjsSame,
+	getFsBirth,
+	getKernelInfo
 };
