@@ -1,6 +1,6 @@
 {
 	"name": "git-date-extractor",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "Easily extract file dates based on git history, and optionally cache in a easy to parse JSON file.",
 	"license": "MIT",
 	"repository": "joshuatz/git-date-extractor",
@@ -13,6 +13,7 @@
 		"git-date-extractor": "src/cli.js",
 		"git-dates": "src/cli.js"
 	},
+	"main": "src/index.js",
 	"engines": {
 		"node": ">=8"
 	},
