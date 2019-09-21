@@ -4,7 +4,7 @@ import test from 'ava';
 const childProc = require('child_process');
 const fse = require('fs-extra');
 const main = require('../src');
-const {posixNormalize, getKernelInfo} = require('../src/helpers');
+const {posixNormalize, getKernelInfo, getSemverInfo} = require('../src/helpers');
 const tstHelpers = require('../src/tst-helpers');
 
 // Set up some paths for testing
@@ -107,14 +107,22 @@ test('main - integration test - git pre commit', async t => {
 	t.true(typeof (alphaStamp.modified) === 'number');
 
 	/**
-	 * For Node v8, on any kernel version of linux, fs.stat does not return valid birthtime (aka creation time)
-	 * On newer Node, they take advantage of glibc (2.28+) syscall to statx(), which is in kernel 4.11+, and returns good birthtime
-	 * So, skip test if (node v < 9 && linux) OR (node v >= 9 && linux  && kernel < 4.11)
+	 * For Node v8 & v9, on any kernel version of linux, fs.stat does not return valid birthtime (aka creation time)
+	 * On newer Node (10.16.0+), they take advantage of glibc (2.28+) syscall to statx(), which is in kernel 4.11+, and returns good birthtime
+	 * So, skip test if (node v < 10.16.0 && linux) OR (node v >= 10.16.0 && linux  && kernel < 4.11)
 	 */
 	let skipNonGitBirthTest = false;
 	if (process.platform !== 'win32') {
+		let hasStatX = true;
 		const kInfo = getKernelInfo();
-		if ((parseFloat(process.versions.node) < 9) || (kInfo.base < 5 && kInfo.major < 11)) {
+		const nodeInfo = getSemverInfo(process.versions.node);
+		if (kInfo.base < 5 && kInfo.major < 11) {
+			hasStatX = false;
+		}
+		if (nodeInfo.major < 10 || (nodeInfo.major === 10 && nodeInfo.minor < 16)) {
+			hasStatX = false;
+		}
+		if (hasStatX === false) {
 			skipNonGitBirthTest = true;
 			t.pass('Non-git-based birthtime test skipped for OS without statx() available');
 		}

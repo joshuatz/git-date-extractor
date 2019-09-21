@@ -336,6 +336,50 @@ function getFsBirth(filePath, preferNative, OPT_fsStats) {
 }
 
 /**
+ * @typedef {Object<string,any>} SemVerInfo
+ * @property {number} major
+ * @property {number} minor
+ * @property {number} patch
+ * @property {string} suffix
+ * @property {string} releaseLabel
+ * @property {string} metadata
+ */
+
+/**
+ * Get numerical semver info from string
+ * Is kind of loose about input format
+ * @param {string} versionStr - Version string. For example, from `process.versions.node`
+ * @returns {SemVerInfo} - SemVer numerical info as obj
+ */
+function getSemverInfo(versionStr) {
+	const info = {
+		major: 0,
+		minor: 0,
+		patch: 0,
+		suffix: '',
+		releaseLabel: '',
+		metadata: ''
+	};
+	// Just in case vstring start with 'v'
+	versionStr = versionStr.replace(/^v/, '');
+	const chunks = versionStr.split('-');
+	if (/(\d+)\.(\d+)\.(\d+)/.test(chunks[0])) {
+		const vChunks = chunks[0].split('.');
+		info.major = parseInt(vChunks[0], 10);
+		info.minor = parseInt(vChunks[1], 10);
+		info.patch = parseInt(vChunks[2], 10);
+	}
+	if (chunks.length > 1) {
+		// Suffix should look like 'beta.1+buildDebug'
+		info.suffix = chunks[1];
+		const suffixChunks = info.suffix.split('+');
+		info.releaseLabel = typeof (suffixChunks[0]) === 'string' ? suffixChunks[0] : '';
+		info.metadata = typeof (suffixChunks[1]) === 'string' ? suffixChunks[1] : '';
+	}
+	return info;
+}
+
+/**
  * @typedef {Object<string,any>} KernelInfo
  * @property {number} base
  * @property {number} major
@@ -346,6 +390,7 @@ function getFsBirth(filePath, preferNative, OPT_fsStats) {
  * Get kernel version of OS (or v # in case of Win)
  * @returns {KernelInfo} - Kernel #
  */
+/* istanbul ignore next */
 function getKernelInfo() {
 	const info = {
 		base: 0,
@@ -427,5 +472,6 @@ module.exports = {
 	getIsValidStampVal,
 	lazyAreObjsSame,
 	getFsBirth,
-	getKernelInfo
+	getKernelInfo,
+	getSemverInfo
 };

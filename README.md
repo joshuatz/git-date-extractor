@@ -1,4 +1,4 @@
-# git-date-extractor [![Build Status](https://travis-ci.com/joshuatz/git-date-extractor.svg?branch=master)](https://travis-ci.com/joshuatz/git-date-extractor) [![codecov](https://codecov.io/gh/joshuatz/git-date-extractor/badge.svg?branch=master)](https://codecov.io/gh/joshuatz/git-date-extractor?branch=master)
+# git-date-extractor [![Build Status](https://travis-ci.org/joshuatz/git-date-extractor.svg?branch=master)](https://travis-ci.com/joshuatz/git-date-extractor) [![codecov](https://codecov.io/gh/joshuatz/git-date-extractor/badge.svg?branch=master)](https://codecov.io/gh/joshuatz/git-date-extractor?branch=master)
 
 > Easily extract file dates based on git history, and optionally cache in a easy to parse JSON file.
 
@@ -14,7 +14,7 @@ It can run as either a CLI tool, or via JS, and returns an easy to parse JSON ob
 
 ## Quick Demo (CLI Usage):
 
-![Demo GIF](./readme-assets/No_Options_Output_To_Console.gif)
+![Demo GIF](https://raw.githubusercontent.com/joshuatz/git-date-extractor/master/readme-assets/No_Options_Output_To_Console.gif)
 
 
 ## Install
@@ -194,3 +194,7 @@ git diff --cached --name-only --diff-filter=ACMRTUXB | xargs git-date-extractor 
 
 ## Portfolio / Project Page
 https://joshuatz.com/projects/applications/git-date-extractor-npm-package-and-cli-tool/
+
+
+## Note about accuracy
+For files that have no git history, this tool has limited accuracy when it comes to creation time (birthtime), especially on Linux, with Node < 10.16.0 and/or Kernel <= 4.11 (where statx is not available).

@@ -106,3 +106,16 @@ test('Option validator', t => {
 test('Null destination', t => {
 	t.true(['NUL', '/dev/null'].indexOf(helpers.getNullDestination()) !== -1);
 });
+
+test('semver info extractor', t => {
+	const dummySemVer = 'v24.5.23-alpha+msvc';
+	const expected = {
+		major: 24,
+		minor: 5,
+		patch: 23,
+		suffix: 'alpha+msvc',
+		releaseLabel: 'alpha',
+		metadata: 'msvc'
+	};
+	t.deepEqual(helpers.getSemverInfo(dummySemVer), expected);
+});

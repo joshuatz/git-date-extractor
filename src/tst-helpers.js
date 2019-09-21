@@ -99,16 +99,18 @@ async function removeTestDir(tempDirPath) {
  * Touch a file (change mtime and/or add text)
  * @param {string} filePath - File to "touch"
  * @param {boolean} byAppending - By appending text
+ * @param {boolean} [OPT_useShell] - Use `touch` command
  * @returns {void}
  */
-function touchFileSync(filePath, byAppending) {
+function touchFileSync(filePath, byAppending, OPT_useShell) {
+	const useShell = typeof (OPT_useShell) === 'boolean' ? OPT_useShell : false;
 	if (byAppending === true) {
 		// Make sure to actually change file contents to trigger git
 		fse.writeFileSync(filePath, 'TOUCHED', {
 			flag: 'a'
 		});
 	}
-	else if (parseFloat(process.versions.node) < 9) {
+	else if (useShell) {
 		childProc.execSync(`touch ${filePath} -m`);
 	}
 	else {
