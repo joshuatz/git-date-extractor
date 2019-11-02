@@ -13,6 +13,11 @@ const FilelistHandler = require('./filelist-handler');
 * @returns {object} - Stamp or info object
 */
 function main(options) {
+	const perfTimings = {
+		start: (new Date()).getTime(),
+		stop: 0,
+		elapsed: 0
+	};
 	/* istanbul ignore if */
 	if (!getIsInGitRepo()) {
 		throw (new Error('Fatal Error: You are not in a git initialized project space! Please run git init.'));
@@ -51,7 +56,7 @@ function main(options) {
 	*/
 	if (filePaths.length > 0) {
 		// Add line break
-		console.log('');
+		console.log('Files queued up. Starting scrape...\n');
 	}
 	for (let f = 0; f < filePaths.length; f++) {
 		let currFullPath = filePaths[f].fullPath;
@@ -83,6 +88,9 @@ function main(options) {
 			console.log('Saving of timestamps file skipped - nothing changed');
 		}
 	}
+	perfTimings.stop = (new Date()).getTime();
+	perfTimings.elapsed = perfTimings.stop - perfTimings.start;
+	console.log(`Total execution time = ${(perfTimings.elapsed / 1000).toFixed(2)} seconds.`);
 	return timestampsCache;
 }
 
