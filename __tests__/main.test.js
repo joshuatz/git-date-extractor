@@ -1,5 +1,6 @@
 // @ts-check
 import test from 'ava';
+import {iDebugLog} from '../src/tst-helpers';
 
 const childProc = require('child_process');
 const fse = require('fs-extra');
@@ -17,6 +18,20 @@ const tempDirNames = {
 
 // Max variance for time diff
 const maxTimeVarianceSec = 2;
+
+// Time tracking
+const perfTimings = {
+	postCommit: {
+		start: 0,
+		stop: 0,
+		elapsed: 0
+	},
+	preCommit: {
+		start: 0,
+		stop: 0,
+		elapsed: 0
+	}
+};
 
 /**
  * This is really a full integration test
@@ -45,6 +60,7 @@ test('main - integration test - git post commit', async t => {
 		cwd: tempDirPath
 	});
 	// Now run full process - get stamps, save to file, etc.
+	perfTimings.postCommit.start = (new Date()).getTime();
 	/**
 	 * @type {InputOptions}
 	 */
@@ -55,7 +71,8 @@ test('main - integration test - git post commit', async t => {
 		outputFileName: cacheFileName
 	};
 	// Run
-	const result = main.getStamps(dummyOptions);
+	const result = await main.getStamps(dummyOptions);
+	perfTimings.postCommit.stop = (new Date()).getTime();
 	const savedResult = JSON.parse(fse.readFileSync(cacheFilePath).toString());
 	// Check that the value passed back via JS matches what was saved to JSON
 	t.deepEqual(result, savedResult);
@@ -98,7 +115,9 @@ test('main - integration test - git pre commit', async t => {
 		outputFileGitAdd: true
 	};
 	// Run
-	const result = main.getStamps(dummyOptions);
+	perfTimings.preCommit.start = (new Date()).getTime();
+	const result = await main.getStamps(dummyOptions);
+	perfTimings.preCommit.stop = (new Date()).getTime();
 	// Now the cache file should be *staged* but **not** committed, since we used `pre`
 	t.falsy(tstHelpers.wasLastCommitAutoAddCache(tempDirPath, cacheFileName));
 	// Check that actual numbers came back for stamps
@@ -137,6 +156,11 @@ test('main - integration test - git pre commit', async t => {
 
 // Teardown dir and files
 test.serial.after.always(async () => {
+	// eslint-disable-next-line guard-for-in
+	for (const key in perfTimings) {
+		perfTimings[key].elapsed = perfTimings[key].stop - perfTimings[key].start;
+	}
+	iDebugLog(perfTimings);
 	const dirNames = Object.keys(tempDirNames).map(key => tempDirNames[key]);
 	for (let x = 0; x < dirNames.length; x++) {
 		const tempDirPath = posixNormalize(__dirname + '/' + dirNames[x]);

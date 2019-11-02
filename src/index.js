@@ -3,6 +3,8 @@
 
 const readline = require('readline');
 const fse = require('fs-extra');
+// @ts-ignore
+const packageInfo = require('../package.json');
 const {posixNormalize, getIsInGitRepo, validateOptions, lazyAreObjsSame} = require('./helpers');
 const {updateTimestampsCacheFile, getTimestampsFromFile} = require('./stamp-handler');
 const FilelistHandler = require('./filelist-handler');
@@ -10,9 +12,10 @@ const FilelistHandler = require('./filelist-handler');
 /**
 * Main - called by CLI and the main export
 * @param {InputOptions} options - input options
-* @returns {object} - Stamp or info object
+* @param {function} [opt_cb] - Optional callback
+* @returns {Promise<object>} - Stamp or info object
 */
-function main(options) {
+async function main(options, opt_cb) {
 	const perfTimings = {
 		start: (new Date()).getTime(),
 		stop: 0,
@@ -25,6 +28,11 @@ function main(options) {
 	const optionsObj = validateOptions(options);
 	/* istanbul ignore if */
 	if (optionsObj.debug) {
+		console.log(`
+			=== Git Date Extractor, DEBUG=ON ===
+			                ${packageInfo.version}
+			====================================
+		`);
 		console.log(optionsObj);
 	}
 	/**
@@ -56,30 +64,49 @@ function main(options) {
 	*/
 	if (filePaths.length > 0) {
 		// Add line break
-		console.log('Files queued up. Starting scrape...\n');
+		console.log(`${filePaths.length} files queued up. Starting scrape...\n`);
 	}
-	for (let f = 0; f < filePaths.length; f++) {
-		let currFullPath = filePaths[f].fullPath;
-		let currLocalPath = filePaths[f].relativeToProjRoot;
-		// Nice progress indicator in console
-		const consoleMsg = `Scraping Date info for file #${f + 1} / ${filePaths.length} ---> ${currLocalPath}`;
-		if (process.stdout && readline) {
-			readline.clearLine(process.stdout, 0);
-			readline.cursorTo(process.stdout, 0, null);
-			process.stdout.write(consoleMsg);
-			// If this is the last loop, close out the line with a newline
-			if (f === filePaths.length - 1) {
-				process.stdout.write('\n');
+	/**
+	 * @type {Array<Promise>}
+	 */
+	const promiseQueue = [];
+
+	filePaths.forEach((filePathMeta, index) => {
+		let currFullPath = filePathMeta.fullPath;
+		let currLocalPath = filePathMeta.relativeToProjRoot;
+		/* istanbul ignore if */
+		if (optionsObj.debug) {
+			// Nice progress indicator in console
+			const consoleMsg = `Starting scrape of date info for file #${index + 1} / ${filePaths.length} ---> ${currLocalPath}`;
+			if (process.stdout && readline) {
+				readline.clearLine(process.stdout, 0);
+				readline.cursorTo(process.stdout, 0, null);
+				process.stdout.write(consoleMsg);
+				// If this is the last loop, close out the line with a newline
+				if (index === filePaths.length - 1) {
+					process.stdout.write('\n');
+				}
+			} else {
+				console.log(consoleMsg);
 			}
-		} else {
-			console.log(consoleMsg);
 		}
 		// Normalize path, force to posix style forward slash
 		currFullPath = posixNormalize(currFullPath);
 		currLocalPath = posixNormalize(currLocalPath);
-		// Update obj
-		timestampsCache[currLocalPath] = getTimestampsFromFile(currFullPath, timestampsCache, currLocalPath, optionsObj, false);
-	}
+
+		const asyncResolver = async () => {
+			const result = await getTimestampsFromFile(currFullPath, timestampsCache, currLocalPath, optionsObj, false);
+			// Update results object
+			timestampsCache[currLocalPath] = result;
+			return result;
+		};
+		promiseQueue.push(asyncResolver());
+	});
+
+	// Wait for all the files to be processed
+	await Promise.all(promiseQueue);
+
+	// Check if we need to write out results to disk
 	if (writeCacheFile) {
 		// Check for diff
 		if (!readCacheFileSuccess || !lazyAreObjsSame(readCacheFileContents, timestampsCache)) {
@@ -88,19 +115,28 @@ function main(options) {
 			console.log('Saving of timestamps file skipped - nothing changed');
 		}
 	}
+
+	// Check for callback
+	if (typeof (opt_cb) === 'function') {
+		opt_cb(timestampsCache);
+	}
+
 	perfTimings.stop = (new Date()).getTime();
 	perfTimings.elapsed = perfTimings.stop - perfTimings.start;
 	console.log(`Total execution time = ${(perfTimings.elapsed / 1000).toFixed(2)} seconds.`);
 	return timestampsCache;
 }
 
+/**
+* Wrapper around main
+* @param {InputOptions} options - input options
+* @param {function} [opt_cb] - Optional callback
+* @returns {Promise<object>} - stamp object or info obj
+*/
+async function getStamps(options, opt_cb) {
+	return main(options, opt_cb);
+}
+
 module.exports = {
-	/**
-	* Wrapper around main
-	* @param {InputOptions} options - input options
-	* @returns {object} - stamp object or info obj
-	*/
-	getStamps(options) {
-		return main(options);
-	}
+	getStamps
 };

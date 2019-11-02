@@ -2,7 +2,7 @@
 
 const childProc = require('child_process');
 const fse = require('fs-extra');
-const {replaceZeros, getIsInGitRepo, getIsValidStampVal, getFsBirth} = require('./helpers');
+const {replaceZeros, getIsInGitRepo, getIsValidStampVal, getFsBirth, execPromise, statPromise} = require('./helpers');
 
 /**
 * Updates the timestamp cache file and checks it into source control, depending on settings
@@ -49,10 +49,10 @@ function updateTimestampsCacheFile(cacheFilePath, jsonObj, optionsObj) {
 * @param {string} [cacheKey] - What is the stamp currently stored under for this file?
 * @param {FinalizedOptions} optionsObj - Options
 * @param {boolean} forceCreatedRefresh - If true, any existing created stamps in cache will be ignored, and re-calculated
-* @returns {StampObject} - Timestamp object for file
+* @returns {Promise<StampObject>} - Timestamp object for file
 */
 // eslint-disable-next-line max-params
-function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceCreatedRefresh) {
+async function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceCreatedRefresh) {
 	const {gitCommitHook} = optionsObj;
 	const ignoreCreatedCache = typeof (forceCreatedRefresh) === 'boolean' ? forceCreatedRefresh : false;
 	const timestampsCache = typeof (cache) === 'object' ? cache : {};
@@ -79,12 +79,12 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 			/**
 			* @type {any}
 			*/
-			let createdStamp = childProc.execSync(`git log --pretty=format:%at -- "${fullFilePath}" | tail -n 1`, execOptions).toString();
+			let createdStamp = (await execPromise(`git log --pretty=format:%at -- "${fullFilePath}" | tail -n 1`, execOptions)).toString();
 			createdStamp = Number(createdStamp);
 			if (!getIsValidStampVal(createdStamp) && gitCommitHook.toString() !== 'post') {
 				// During pre-commit, a file could be being added for the first time, so it wouldn't show up in the git log. We'll fall back to OS stats here
 				// createdStamp = Math.floor(fse.statSync(fullFilePath).birthtimeMs / 1000);
-				createdStamp = getFsBirth(fullFilePath).birthtime;
+				createdStamp = (await getFsBirth(fullFilePath)).birthtime;
 			}
 			if (Number.isNaN(createdStamp) === false) {
 				dateVals.created = createdStamp;
@@ -94,13 +94,14 @@ function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceC
 		let modifiedStamp = null;
 		if (gitCommitHook === 'none' || gitCommitHook === 'post') {
 			// If this is running after the commit that modified the file, we can use git log to pull the modified time out
-			modifiedStamp = childProc.execSync(`git log --pretty=format:%at --follow -- "${fullFilePath}" | sort | tail -n 1`, execOptions).toString();
+			modifiedStamp = (await execPromise(`git log --pretty=format:%at --follow -- "${fullFilePath}" | sort | tail -n 1`, execOptions)).toString();
 		}
 		modifiedStamp = Number(modifiedStamp);
 		if (gitCommitHook === 'pre' || !getIsValidStampVal(modifiedStamp)) {
 			// If this is running before the changed files have actually be commited, they either won't show up in the git log, or the modified time in the log will be from one commit ago, not the current
 			// Pull modified time from file itself
-			modifiedStamp = Math.floor(fse.statSync(fullFilePath).mtimeMs / 1000);
+			const fsStats = await statPromise(fullFilePath);
+			modifiedStamp = Math.floor(fsStats.mtimeMs / 1000);
 		}
 		if (Number.isNaN(modifiedStamp) === false) {
 			dateVals.modified = modifiedStamp;

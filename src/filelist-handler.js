@@ -102,10 +102,6 @@ const FilelistHandler = (function() {
 				}
 			}
 		}
-		/* istanbul ignore if */
-		if (optionsObj.debug) {
-			console.log(this.filePaths);
-		}
 	}
 	/**
 	 * Checks if a file is on the allowFiles list (aka the whitelist)
