@@ -201,6 +201,10 @@ git diff --cached --name-only --diff-filter=ACMRTUXB | xargs git-date-extractor 
 ## Portfolio / Project Page
 https://joshuatz.com/projects/applications/git-date-extractor-npm-package-and-cli-tool/
 
+## Major updates
+Version | Date | Notes
+--- | --- | ---
+2.0.0 | 11/01/2019 | Refactored a bunch of stuff to be async. Main export is now async, which makes it incompatible with the previous version and necessitated a major version bump.
 
 ## Note about accuracy
 For files that have no git history, this tool has limited accuracy when it comes to creation time (birthtime), especially on Linux, with Node < 10.16.0 and/or Kernel <= 4.11 (where statx is not available).

@@ -64,7 +64,7 @@ async function main(options, opt_cb) {
 	*/
 	if (filePaths.length > 0) {
 		// Add line break
-		console.log('Files queued up. Starting scrape...\n');
+		console.log(`${filePaths.length} files queued up. Starting scrape...\n`);
 	}
 	/**
 	 * @type {Array<Promise>}
@@ -74,6 +74,7 @@ async function main(options, opt_cb) {
 	filePaths.forEach((filePathMeta, index) => {
 		let currFullPath = filePathMeta.fullPath;
 		let currLocalPath = filePathMeta.relativeToProjRoot;
+		/* istanbul ignore if */
 		if (optionsObj.debug) {
 			// Nice progress indicator in console
 			const consoleMsg = `Starting scrape of date info for file #${index + 1} / ${filePaths.length} ---> ${currLocalPath}`;

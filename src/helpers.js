@@ -424,7 +424,6 @@ function getKernelInfo() {
  * @returns {Promise<Buffer>} - Stdout buffer
  */
 function execPromise(cmdStr, options) {
-	const childProc = require('child_process');
 	return new Promise((resolve, reject) => {
 		childProc.exec(cmdStr, options, (error, stdout) => {
 			if (error) {
