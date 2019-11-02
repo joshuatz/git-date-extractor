@@ -1,5 +1,3 @@
-/// <reference types="node"/>
-
 type GitCommitHook = "pre" | "post" | "none";
 
 interface StampObject {
@@ -30,7 +28,9 @@ interface InputOptions {
 	// What triggered the execution
 	gitCommitHook?: GitCommitHook,
 	// Project root
-	projectRootPath?: string
+	projectRootPath?: string,
+	// Debug
+	debug?: boolean
 }
 
 interface FinalizedOptions {

@@ -65,6 +65,9 @@
 			"complexity": "off",
 			"arrow-parens": "off",
 			"brace-style": "off"
-		}
+		},
+		"ignores" : [
+			"**/*d.ts"
+		]
 	}
 }

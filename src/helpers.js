@@ -279,21 +279,25 @@ function getEndOfRangeFromStat(stats) {
  * @param {string} filePath - The filepath of the file to get birth of
  * @param {boolean} [preferNative] - Prefer using Node FS - don't try for debugfs
  * @param {object} [OPT_fsStats] - Stats object, if you already have it ready
- * @returns {BirthStamps} - Birth stamps
+ * @returns {Promise<BirthStamps>} - Birth stamps
  */
-function getFsBirth(filePath, preferNative, OPT_fsStats) {
+async function getFsBirth(filePath, preferNative, OPT_fsStats) {
 	const birthStamps = {
 		birthtime: null,
 		birthtimeMs: null,
 		source: 'fs',
 		errorMsg: ''
 	};
+	/**
+	 * @type {import('fs-extra').Stats}
+	 */
 	let fsStats;
+
 	// Check for passed in value
 	if (typeof (fsStats) === 'object' && 'birthtimeMs' in fsStats) {
 		fsStats = OPT_fsStats;
 	} else {
-		fsStats = fse.statSync(filePath);
+		fsStats = await statPromise(filePath);
 	}
 	if (parseFloat(process.versions.node) > 9 || preferNative || process.platform === 'win32') {
 		// Just use FS
@@ -305,11 +309,12 @@ function getFsBirth(filePath, preferNative, OPT_fsStats) {
 		try {
 			// Grab inode number, and device
 			const inode = fsStats.ino;
-			const deviceStr = /Device:\s{0,1}([a-zA-Z0-9\/]+)/.exec(childProc.execSync(`stat ${filePath}`).toString())[1];
+			const fullStatStr = (await execPromise(`stat ${filePath}`)).toString();
+			const deviceStr = /Device:\s{0,1}([a-zA-Z0-9\/]+)/.exec(fullStatStr)[1];
 			// Make call to debugfs
-			const debugFsInfo = childProc.execSync(`debugfs -R 'stat <${inode}> --format=%W' ${deviceStr}`, {
+			const debugFsInfo = (await execPromise(`debugfs -R 'stat <${inode}> --format=%W' ${deviceStr}`, {
 				stdio: 'pipe'
-			}).toString();
+			})).toString();
 			// Parse for timestamp
 			const birthTimeSec = parseInt(debugFsInfo, 10);
 			if (!Number.isNaN(birthTimeSec) && birthTimeSec !== 0) {
@@ -412,6 +417,43 @@ function getKernelInfo() {
 	return info;
 }
 
+/**
+ * Promise wrapper around child_process exec
+ * @param {string} cmdStr - Command to execute
+ * @param {any} [options] - Exec options
+ * @returns {Promise<Buffer>} - Stdout buffer
+ */
+function execPromise(cmdStr, options) {
+	const childProc = require('child_process');
+	return new Promise((resolve, reject) => {
+		childProc.exec(cmdStr, options, (error, stdout) => {
+			if (error) {
+				reject(error);
+				return;
+			}
+			resolve(stdout);
+		});
+	});
+}
+
+/* eslint-disable-next-line valid-jsdoc */
+/**
+ * Promise wrapper around fs-extra stat
+ * @param {string} filePath - Filepath to stat
+ * @returns {Promise<import('fs-extra').Stats>}
+ */
+function statPromise(filePath) {
+	return new Promise((resolve, reject) => {
+		fse.stat(filePath, (err, stats) => {
+			if (err) {
+				reject(err);
+				return;
+			}
+			resolve(stats);
+		});
+	});
+}
+
 // @todo this is probably going to need to be revised
 let projectRootPath = isInNodeModules() ? posixNormalize(path.normalize(`${__dirname}/../..`)) : posixNormalize(`${__dirname}`);
 const callerDir = posixNormalize(process.cwd());
@@ -473,5 +515,7 @@ module.exports = {
 	lazyAreObjsSame,
 	getFsBirth,
 	getKernelInfo,
-	getSemverInfo
+	getSemverInfo,
+	execPromise,
+	statPromise
 };

@@ -57,13 +57,13 @@ Generic usage:
 ```js
 const gitDateExtractor = require('git-date-extractor');
 
-const stamps = gitDateExtractor.getStamps(optionsObject);
+const stamps = await gitDateExtractor.getStamps(optionsObject);
 ```
 
 Sample demo:
 ```js
 // This will store stamps into `stamps` variable, as well as save to file
-const stamps = gitDateExtractor.getStamps({
+const stamps = await gitDateExtractor.getStamps({
 	outputToFile: true,
 	outputFileName: 'timestamps.json',
 	projectRootPath: __dirname
@@ -91,6 +91,8 @@ console.log(stamps);
 
 ```
 
+> If you prefer callback style of async, you can pass a callback function as the second argument to `getStamps`.
+
 ### Via CLI
 ```
 $ npm install --global git-date-extractor
@@ -114,6 +116,7 @@ $ git-dates --help
 		--allowFiles {string[] | string}
 		--gitCommitHook {"post" | "pre" | "none"} [Default: "none"]
 		--projectRootPath {string}
+		--debug {boolean} [Default: false]
 
 	Examples
 		$ git-date-extractor
@@ -143,6 +146,9 @@ blockFiles | blocklist | Block certain files from being tracked | `string[] or s
 allowFiles | whitelist | Exception list of filepaths that will override certain blocks.<br>See advanced examples section. | `string[] or string | NA
 gitCommitHook | git-stage | Use this if you are running this script on a git hook.<br>For example, use `post` and the script will append a new commit with the changed timestamp file. | `"pre"` or `"post"` or `"none"` | `"none"`
 projectRootPath | rootDir | Top level directory containing your files.<br>Script should be able to detect automatically, but can also pass to be safe. | `string` | Auto-detected based on `proccess.cwd()`<br>or `__dirname`
+debug | debug | Might output extra meta info related to the development of this module | `boolean` | `false`
+
+> Warning: The debug option actually slows down the speed of execution a little due to some overhead related to logging
 
 ---
 

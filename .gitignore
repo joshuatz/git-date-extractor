@@ -6,3 +6,4 @@ scratchpad.js
 gittest
 __tests__/tempdir-*
 debug.txt
+*.0x

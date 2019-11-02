@@ -19,6 +19,7 @@ const cli = meow(`
 	  --allowFiles {string[] | string}
 	  --gitCommitHook {"post" | "pre" | "none"} [Default: "none"]
 	  --projectRootPath {string}
+	  --debug {boolean} [Default: false]
 
 	Examples
 	  $ git-date-extractor
@@ -86,10 +87,13 @@ const regularArgs = cli.input;
 finalizedOptions.files = finalizedOptions.files.concat(regularArgs);
 
 // Call main with options
-const result = gitDateExtractor.getStamps(finalizedOptions);
-if (finalizedOptions.outputToFile === false) {
-	console.log(result);
-} else {
-	const msg = 'timestamps file updated';
-	console.log(msg);
-}
+gitDateExtractor.getStamps(finalizedOptions).then(result => {
+	if (finalizedOptions.outputToFile === false) {
+		console.log(result);
+	} else {
+		const msg = 'timestamps file updated';
+		console.log(msg);
+	}
+}).catch(error => {
+	console.error(error);
+});
