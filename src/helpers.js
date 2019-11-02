@@ -454,6 +454,51 @@ function statPromise(filePath) {
 	});
 }
 
+/**
+ * Replaces any root level values on an object that are 0, with a different value
+ * @param {object} inputObj  - The object to replace zeros on
+ * @param {any} replacement - what to replace the zeros with
+ * @returns {object} The object with zeros replaced
+ */
+function replaceZeros(inputObj, replacement) {
+	const keys = Object.keys(inputObj);
+	for (let x = 0; x < keys.length; x++) {
+		if (inputObj[keys[x]] === 0) {
+			inputObj[keys[x]] = replacement;
+		}
+	}
+	return inputObj;
+}
+
+/**
+ * Test whether or not we are in a git initialized repo space / folder
+ * @param {string} [OPT_folder] - Optional: Folder to use as dir to check in
+ * @returns {boolean} Whether or not in git repo
+ */
+function getIsInGitRepo(OPT_folder) {
+	let executeInPath = __dirname;
+	if (typeof (OPT_folder) === 'string') {
+		executeInPath = path.normalize(OPT_folder);
+	}
+	try {
+		childProc.execSync(`git status`, {
+			cwd: executeInPath
+		});
+		return true;
+	} catch (error) {
+		return false;
+	}
+}
+
+/**
+ * Return whether or not a filepath is a relative path
+ * @param {string} filePath - Filepath to check
+ * @returns {boolean} - If it is, or is not, a relative path.
+ */
+function getIsRelativePath(filePath) {
+	return !path.isAbsolute(filePath);
+}
+
 // @todo this is probably going to need to be revised
 let projectRootPath = isInNodeModules() ? posixNormalize(path.normalize(`${__dirname}/../..`)) : posixNormalize(`${__dirname}`);
 const callerDir = posixNormalize(process.cwd());
@@ -466,46 +511,12 @@ const projectRootPathTrailingSlash = projectRootPath + '/';
 
 module.exports = {
 	posixNormalize,
-	/**
-	* Replaces any root level values on an object that are 0, with a different value
-	* @param {object} inputObj  - The object to replace zeros on
-	* @param {any} replacement - what to replace the zeros with
-	* @returns {object} The object with zeros replaced
-	*/
-	replaceZeros(inputObj, replacement) {
-		const keys = Object.keys(inputObj);
-		for (let x = 0; x < keys.length; x++) {
-			if (inputObj[keys[x]] === 0) {
-				inputObj[keys[x]] = replacement;
-			}
-		}
-		return inputObj;
-	},
-	/**
-	* Test whether or not we are in a git initialized repo space / folder
-	* @param {string} [OPT_folder] - Optional: Folder to use as dir to check in
-	* @returns {boolean} Whether or not in git repo
-	*/
-	getIsInGitRepo(OPT_folder) {
-		let executeInPath = __dirname;
-		if (typeof (OPT_folder) === 'string') {
-			executeInPath = path.normalize(OPT_folder);
-		}
-		try {
-			childProc.execSync(`git status`, {
-				cwd: executeInPath
-			});
-			return true;
-		} catch (error) {
-			return false;
-		}
-	},
+	replaceZeros,
+	getIsInGitRepo,
 	replaceInObj,
 	projectRootPath,
 	projectRootPathTrailingSlash,
-	getIsRelativePath(filePath) {
-		return !path.isAbsolute(filePath);
-	},
+	getIsRelativePath,
 	isInNodeModules,
 	validateOptions,
 	extractArrFromStr,
