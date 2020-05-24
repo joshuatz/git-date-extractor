@@ -1,7 +1,6 @@
 /// <reference path="../types.d.ts"/>
 // @ts-check
-import test from 'ava';
-
+const test = require('ava').default;
 const path = require('path');
 const fse = require('fs-extra');
 const FilelistHandler = require('../src/filelist-handler');

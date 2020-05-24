@@ -1,6 +1,6 @@
 // @ts-check
-import test from 'ava';
-import * as helpers from '../src/helpers';
+const test = require('ava').default;
+const helpers = require('../src/helpers');
 /**
 * Helpers testing
 */

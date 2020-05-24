@@ -1,6 +1,6 @@
 // @ts-check
-import test from 'ava';
-import {iDebugLog} from '../src/tst-helpers';
+const test = require('ava').default;
+const {iDebugLog} = require('../src/tst-helpers');
 
 const childProc = require('child_process');
 const fse = require('fs-extra');
