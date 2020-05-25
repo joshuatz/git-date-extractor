@@ -5,6 +5,7 @@ const path = require('path');
 const fse = require('fs-extra');
 const FilelistHandler = require('../src/filelist-handler');
 const {replaceInObj, validateOptions, posixNormalize} = require('../src/helpers');
+const {getTestFilePaths, buildDir} = require('../src/tst-helpers');
 
 // Set up some paths for testing
 // Test folder will be built in project root to avoid auto-filter based on __tests__ dirname
@@ -12,23 +13,9 @@ const tempDirName = 'tempdir-filehandler';
 const tempDirPath = posixNormalize(__dirname + '/../' + tempDirName);
 const tempSubDirName = 'subdir';
 const tempSubDirPath = `${tempDirPath}/${tempSubDirName}`;
-const tempDotDirName = '.dotdir';
-const tempDotDirPath = `${tempDirPath}/${tempDotDirName}`;
-
 const projectRootPathTrailingSlash = tempDirPath + '/';
 
-const testFiles = {
-	alpha: `${tempDirPath}/alpha.txt`,
-	bravo: `${tempDirPath}/bravo.txt`,
-	charlie: `${tempDirPath}/charlie.txt`,
-	subdir: {
-		delta: `${tempDirPath}/${tempSubDirName}/delta.txt`,
-		echo: `${tempDirPath}/${tempSubDirName}/echo.txt`
-	},
-	".dotdir": {
-		foxtrot: `${tempDirPath}/${tempDotDirName}/foxtrot.txt`
-	}
-};
+const testFiles = getTestFilePaths(tempDirPath);
 
 const testFilesRelative = replaceInObj(testFiles, function(filePath) {
 	return path.normalize(filePath).replace(path.normalize(projectRootPathTrailingSlash), '');
@@ -36,15 +23,14 @@ const testFilesRelative = replaceInObj(testFiles, function(filePath) {
 
 // Create directory and files for testing
 test.before(() => {
-	fse.ensureDirSync(tempDirPath);
-	fse.ensureFileSync(testFiles.alpha);
-	fse.ensureFileSync(testFiles.bravo);
-	fse.ensureFileSync(testFiles.charlie);
-	fse.ensureDirSync(tempSubDirPath);
-	fse.ensureFileSync(testFiles.subdir.delta);
-	fse.ensureFileSync(testFiles.subdir.echo);
-	fse.ensureDirSync(tempDotDirPath);
-	fse.ensureFileSync(testFiles[".dotdir"].foxtrot);
+	buildDir(tempDirPath, testFiles);
+});
+
+// Teardown dir and files
+test.after.always(async () => {
+	// Just delete the top leve dir
+	await fse.emptyDir(tempDirPath);
+	await fse.rmdir(tempDirPath);
 });
 
 test('Restricting files by directory (onlyIn)', t => {
@@ -160,11 +146,4 @@ test('Testing automatic dir parsing and filtering, + block list', t => {
 		}
 	];
 	t.deepEqual(instance.filePaths, expected);
-});
-
-// Teardown dir and files
-test.after.always(async () => {
-	// Just delete the top leve dir
-	await fse.emptyDir(tempDirPath);
-	await fse.rmdir(tempDirPath);
 });

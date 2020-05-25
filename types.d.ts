@@ -46,3 +46,7 @@ interface FinalizedOptions {
 	projectRootPathTrailingSlash: string,
 	debug: boolean
 }
+
+interface DirListing {
+	[index: string]: string | DirListing;
+}

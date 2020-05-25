@@ -45,34 +45,61 @@ function iDebugLog(msg) {
 }
 
 /**
+ * Get list of test files paths to use (not created)
+ * @param {string} dirPath - The full path dir where temp files should go
+ */
+function getTestFilePaths(dirPath) {
+	const subDirName = 'subdir';
+	const dotDirName = '.dotdir';
+	return {
+		alpha: `${dirPath}/alpha.txt`,
+		bravo: `${dirPath}/bravo.txt`,
+		charlie: `${dirPath}/charlie.txt`,
+		subdir: {
+			delta: `${dirPath}/${subDirName}/delta.txt`,
+			echo: `${dirPath}/${subDirName}/echo.txt`
+		},
+		[dotDirName]: {
+			foxtrot: `${dirPath}/${dotDirName}/foxtrot.txt`
+		}
+	};
+}
+
+/**
+ * Build a local directory, filled with dummy files
+ * @param {string} dirPath - Absolute path of where the directory should be created
+ * @param {DirListing} dirListing - Listing of files to create, using absolute paths
+ */
+function buildDir(dirPath, dirListing) {
+	/**
+	 * Note: build operation must be done non-async, since
+	 * file creation depends on dir creation
+	 */
+	fse.ensureDirSync(dirPath);
+	fse.emptyDirSync(dirPath);
+	for (const key in dirListing) {
+		const val = dirListing[key];
+		if (typeof val === 'string') {
+			fse.ensureFileSync(val);
+		} else {
+			buildDir(`${dirPath}/${key}`, val);
+		}
+	}
+}
+
+/**
  * Build a test dir based on inputs
  * @param {string} tempDirPath - The full path of the temp dir
- * @param {string} tempSubDirName - the name of the subdir
  * @param {boolean} gitInit - if `git init` should be ran in dir
  * @param {string} [cacheFileName] - If cache file should be created, pass name
  * @returns {object} info about created test dir
  */
-function buildTestDir(tempDirPath, tempSubDirName, gitInit, cacheFileName) {
-	const testFiles = {
-		alpha: `${tempDirPath}/alpha.txt`,
-		bravo: `${tempDirPath}/bravo.txt`,
-		charlie: `${tempDirPath}/charlie.txt`,
-		subdir: {
-			delta: `${tempDirPath}/${tempSubDirName}/delta.txt`,
-			echo: `${tempDirPath}/${tempSubDirName}/echo.txt`
-		}
-	};
+function buildTestDir(tempDirPath, gitInit, cacheFileName) {
+	const testFiles = getTestFilePaths(tempDirPath);
 	const testFilesRelative = replaceInObj(testFiles, filePath => {
 		return path.normalize(filePath).replace(path.normalize(projectRootPathTrailingSlash), '');
 	});
-	fse.ensureDirSync(tempDirPath);
-	fse.emptyDirSync(tempDirPath);
-	fse.ensureFileSync(testFiles.alpha);
-	fse.ensureFileSync(testFiles.bravo);
-	fse.ensureFileSync(testFiles.charlie);
-	fse.ensureDirSync(`${tempDirPath}/${tempSubDirName}`);
-	fse.ensureFileSync(testFiles.subdir.delta);
-	fse.ensureFileSync(testFiles.subdir.echo);
+	buildDir(tempDirPath, testFilesRelative);
 	if (typeof (cacheFileName) === 'string') {
 		fse.ensureFileSync(`${tempDirPath}/${cacheFileName}`);
 	}
@@ -130,5 +157,7 @@ module.exports = {
 	iDebugLog,
 	buildTestDir,
 	removeTestDir,
-	touchFileSync
+	touchFileSync,
+	getTestFilePaths,
+	buildDir
 };

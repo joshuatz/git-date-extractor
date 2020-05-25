@@ -10,7 +10,6 @@ const tstHelpers = require('../src/tst-helpers');
 
 // Set up some paths for testing
 const cacheFileName = 'cache.json';
-const tempSubDirName = 'subdir';
 const tempDirNames = {
 	mainPostTest: 'tempdir-main-post',
 	mainPreTest: 'tempdir-main-pre'
@@ -41,7 +40,7 @@ test('main - integration test - git post commit', async t => {
 	const tempDirName = tempDirNames.mainPostTest;
 	const tempDirPath = posixNormalize(__dirname + '/' + tempDirName);
 	const cacheFilePath = posixNormalize(`${tempDirPath}/${cacheFileName}`);
-	const {testFiles} = tstHelpers.buildTestDir(tempDirPath, tempSubDirName, true);
+	const {testFiles} = tstHelpers.buildTestDir(tempDirPath, true);
 	const checkTimeDelayMs = 5000;
 	// Git add the files, since we are emulating a post commit
 	childProc.execSync('git add . && git commit -m "added files"', {
@@ -93,7 +92,7 @@ test('main - integration test - git pre commit', async t => {
 	// Create test dir
 	const tempDirName = tempDirNames.mainPreTest;
 	const tempDirPath = posixNormalize(__dirname + '/' + tempDirName);
-	const {testFiles} = tstHelpers.buildTestDir(tempDirPath, tempSubDirName, true, cacheFileName);
+	const {testFiles} = tstHelpers.buildTestDir(tempDirPath, true, cacheFileName);
 	const checkTimeDelayMs = 8000;
 	// Wait a bit so that we can make sure there is a difference in stamps
 	await (new Promise((resolve) => {
