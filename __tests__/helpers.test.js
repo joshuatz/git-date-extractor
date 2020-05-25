@@ -104,7 +104,7 @@ test('Option validator', t => {
 });
 
 test('Null destination', t => {
-	t.true(['NUL', '/dev/null'].indexOf(helpers.getNullDestination()) !== -1);
+	t.true(['NUL', '/dev/null'].includes(helpers.getNullDestination()));
 });
 
 test('semver info extractor', t => {

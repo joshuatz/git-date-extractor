@@ -156,7 +156,6 @@ test('main - integration test - git pre commit', async t => {
 
 // Teardown dir and files
 test.serial.after.always(async () => {
-	// eslint-disable-next-line guard-for-in
 	for (const key in perfTimings) {
 		perfTimings[key].elapsed = perfTimings[key].stop - perfTimings[key].start;
 	}

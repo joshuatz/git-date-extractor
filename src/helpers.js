@@ -74,7 +74,7 @@ function _validateOptions(input) {
 		moddedOptions.gitCommitHook = 'none';
 	}
 	// Reset invalid git commit hook selection
-	if (typeof (moddedOptions.gitCommitHook) === 'string' && ['pre', 'post', 'none'].indexOf(moddedOptions.gitCommitHook) === -1) {
+	if (typeof (moddedOptions.gitCommitHook) === 'string' && ['pre', 'post', 'none'].includes(moddedOptions.gitCommitHook) === false) {
 		moddedOptions.gitCommitHook = 'none';
 	}
 	// Force single file passed to array
@@ -435,7 +435,6 @@ function execPromise(cmdStr, options) {
 	});
 }
 
-/* eslint-disable-next-line valid-jsdoc */
 /**
  * Promise wrapper around fs-extra stat
  * @param {string} filePath - Filepath to stat
@@ -484,6 +483,7 @@ function getIsInGitRepo(OPT_folder) {
 			cwd: executeInPath
 		});
 		return true;
+	// eslint-disable-next-line no-unused-vars
 	} catch (error) {
 		return false;
 	}
@@ -502,7 +502,7 @@ function getIsRelativePath(filePath) {
 let projectRootPath = isInNodeModules() ? posixNormalize(path.normalize(`${__dirname}/../..`)) : posixNormalize(`${__dirname}`);
 const callerDir = posixNormalize(process.cwd());
 /* istanbul ignore if */
-if (projectRootPath.indexOf(callerDir) === -1) {
+if (projectRootPath.includes(callerDir)) {
 	// This shouldn't be the case
 	projectRootPath = callerDir;
 }

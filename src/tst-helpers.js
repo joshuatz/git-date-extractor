@@ -21,6 +21,7 @@ function wasLastCommitAutoAddCache(gitDir, cacheFileName) {
 		const commitMsgMatch = /AUTO: Updated/.test(gitCommitMsg);
 		const changedFilesMatch = changedFiles === cacheFileName;
 		return commitMsgMatch && changedFilesMatch;
+	// eslint-disable-next-line no-unused-vars
 	} catch (error) {
 		return false;
 	}
@@ -117,6 +118,7 @@ function touchFileSync(filePath, byAppending, OPT_useShell) {
 		const now = new Date();
 		try {
 			fse.utimesSync(filePath, now, now);
+		// eslint-disable-next-line no-unused-vars
 		} catch (error) {
 			fse.closeSync(fse.openSync(filePath, 'w'));
 		}

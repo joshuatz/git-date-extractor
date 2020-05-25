@@ -64,7 +64,13 @@
 			"camelcase": "off",
 			"complexity": "off",
 			"arrow-parens": "off",
-			"brace-style": "off"
+			"brace-style": "off",
+			"unicorn/prevent-abbreviations": "off",
+			"unicorn/no-for-loop": "off",
+			"guard-for-in": "off",
+			"unicorn/prefer-set-has": "off",
+			"unicorn/better-regex": "off",
+			"unicorn/prefer-number-properties": "off"
 		},
 		"ignores": [
 			"**/*d.ts"

@@ -52,6 +52,7 @@ async function main(options, opt_cb) {
 				timestampsCache = JSON.parse(fse.readFileSync(optionsObj.outputFileName).toString());
 				readCacheFileSuccess = true;
 				readCacheFileContents = JSON.parse(JSON.stringify(timestampsCache));
+			// eslint-disable-next-line no-unused-vars
 			} catch (error) {
 				console.warn(`Could not read in cache file @ ${optionsObj.outputFileName}`);
 			}
