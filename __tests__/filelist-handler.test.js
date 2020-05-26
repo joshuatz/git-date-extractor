@@ -137,6 +137,14 @@ test('Testing automatic dir parsing and filtering, + block list', t => {
 			relativeToProjRoot: testFilesRelative.bravo
 		},
 		{
+			fullPath: path.normalize(testFiles.space),
+			relativeToProjRoot: testFilesRelative.space
+		},
+		{
+			fullPath: path.normalize(testFiles.specialChars),
+			relativeToProjRoot: testFilesRelative.specialChars
+		},
+		{
 			fullPath: path.normalize(testFiles.subdir.delta),
 			relativeToProjRoot: testFilesRelative.subdir.delta
 		},

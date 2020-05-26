@@ -40,7 +40,7 @@ test('main - integration test - git post commit', async t => {
 	const tempDirName = tempDirNames.mainPostTest;
 	const tempDirPath = posixNormalize(__dirname + '/' + tempDirName);
 	const cacheFilePath = posixNormalize(`${tempDirPath}/${cacheFileName}`);
-	const {testFiles} = tstHelpers.buildTestDir(tempDirPath, true);
+	const {testFiles, testFilesNamesOnly} = tstHelpers.buildTestDir(tempDirPath, true);
 	const checkTimeDelayMs = 5000;
 	// Git add the files, since we are emulating a post commit
 	childProc.execSync('git add . && git commit -m "added files"', {
@@ -77,7 +77,13 @@ test('main - integration test - git post commit', async t => {
 	t.deepEqual(result, savedResult);
 	// Check that last commit was from self
 	t.truthy(tstHelpers.wasLastCommitAutoAddCache(tempDirPath, cacheFileName));
-	// Check that actual numbers came back for stamps
+
+	// Check that actual numbers came back for stamps for files,
+	// but ignore .dotdir, as those are blocked by default
+	delete testFilesNamesOnly['.dotdir'];
+	tstHelpers.testForStampInResults(t, testFilesNamesOnly, result);
+
+	// Check a specific file stamp to verify it makes sense
 	const alphaStamp = result['alpha.txt'];
 	t.true(typeof (alphaStamp.created) === 'number');
 	t.true(typeof (alphaStamp.modified) === 'number');

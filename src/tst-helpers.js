@@ -2,7 +2,7 @@
 const childProc = require('child_process');
 const path = require('path');
 const fse = require('fs-extra');
-const {replaceInObj, projectRootPathTrailingSlash} = require('./helpers');
+const {replaceInObj, projectRootPathTrailingSlash, posixNormalize} = require('./helpers');
 
 /**
  * Test if the last commit in the log is from self (auto add of cache file)
@@ -55,6 +55,8 @@ function getTestFilePaths(dirPath) {
 		alpha: `${dirPath}/alpha.txt`,
 		bravo: `${dirPath}/bravo.txt`,
 		charlie: `${dirPath}/charlie.txt`,
+		space: `${dirPath}/space test.png`,
+		specialChars: `${dirPath}/special-chars.file.gif`,
 		subdir: {
 			delta: `${dirPath}/${subDirName}/delta.txt`,
 			echo: `${dirPath}/${subDirName}/echo.txt`
@@ -92,12 +94,16 @@ function buildDir(dirPath, dirListing) {
  * @param {string} tempDirPath - The full path of the temp dir
  * @param {boolean} gitInit - if `git init` should be ran in dir
  * @param {string} [cacheFileName] - If cache file should be created, pass name
- * @returns {object} info about created test dir
  */
 function buildTestDir(tempDirPath, gitInit, cacheFileName) {
 	const testFiles = getTestFilePaths(tempDirPath);
 	const testFilesRelative = replaceInObj(testFiles, filePath => {
 		return path.normalize(filePath).replace(path.normalize(projectRootPathTrailingSlash), '');
+	});
+	const testFilesNamesOnly = replaceInObj(testFiles, filePath => {
+		const filename = path.normalize(filePath).replace(path.normalize(tempDirPath), '');
+		// Remove any beginning slashes, and posix normalize
+		return posixNormalize(filename.replace(/^[\/\\]{1,2}/g, ''));
 	});
 	buildDir(tempDirPath, testFilesRelative);
 	if (typeof (cacheFileName) === 'string') {
@@ -113,6 +119,7 @@ function buildTestDir(tempDirPath, gitInit, cacheFileName) {
 	return {
 		testFiles,
 		testFilesRelative,
+		testFilesNamesOnly,
 		stamp
 	};
 }
@@ -152,6 +159,34 @@ function touchFileSync(filePath, byAppending, OPT_useShell) {
 	}
 }
 
+/**
+ * Require that all input files have a corresponding stamp entry in results
+ * @param {import('ava').ExecutionContext} testContext
+ * @param {DirListing} files - Input file list
+ * @param {StampCache} results - Output results from scraper
+ */
+function testForStampInResults(testContext, files, results) {
+	for (const key in files) {
+		if (typeof files[key] === 'object') {
+			/** @type {DirListing} */
+			const dirListing = (files[key]);
+			testForStampInResults(testContext, dirListing, results);
+		} else {
+			/** @type {string} */
+			const filePath = (files[key]);
+			const stampEntry = results[filePath];
+			const testMsg = JSON.stringify({
+				filePath,
+				stampEntry,
+				results
+			}, null, 4);
+			testContext.true(typeof stampEntry === 'object', testMsg);
+			testContext.true(typeof stampEntry.created === 'number', testMsg);
+			testContext.true(typeof stampEntry.modified === 'number', testMsg);
+		}
+	}
+}
+
 module.exports = {
 	wasLastCommitAutoAddCache,
 	iDebugLog,
@@ -159,5 +194,6 @@ module.exports = {
 	removeTestDir,
 	touchFileSync,
 	getTestFilePaths,
-	buildDir
+	buildDir,
+	testForStampInResults
 };
