@@ -98,16 +98,14 @@ function _validateOptions(input) {
 	if (!Array.isArray(moddedOptions.allowFiles)) {
 		moddedOptions.allowFiles = [];
 	}
-	// Debug - only allow for dev, and allow override
+	// Debug - auto set to true if local dev
 	/* istanbul ignore if */
-	if (typeof (moddedOptions.debug) === 'boolean') {
-		if (moddedOptions.debug === true && /.+\/laragon\/.+\/git-date-extractor.*/.test(posixNormalize(__dirname))) {
+	if (typeof (moddedOptions.debug) !== 'boolean') {
+		if (/.+\/laragon\/.+\/git-date-extractor-debug\/.*/.test(posixNormalize(__dirname))) {
 			moddedOptions.debug = true;
 		} else {
 			moddedOptions.debug = false;
 		}
-	} else {
-		moddedOptions.debug = false;
 	}
 	return moddedOptions;
 }
@@ -514,6 +512,7 @@ module.exports = {
 	getIsInGitRepo,
 	replaceInObj,
 	projectRootPath,
+	callerDir,
 	projectRootPathTrailingSlash,
 	getIsRelativePath,
 	isInNodeModules,
