@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 'use strict';
+global.calledViaCLI = true;
 const meow = require('meow');
 const {validateOptions} = require('./helpers');
 const gitDateExtractor = require('.');

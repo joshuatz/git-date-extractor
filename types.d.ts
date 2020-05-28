@@ -50,3 +50,9 @@ interface FinalizedOptions {
 interface DirListing {
 	[index: string]: string | DirListing;
 }
+
+declare namespace NodeJS {
+	interface Global {
+		calledViaCLI?: boolean;
+	}
+}
