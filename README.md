@@ -1,4 +1,4 @@
-# git-date-extractor [![Build Status](https://travis-ci.org/joshuatz/git-date-extractor.svg?branch=master)](https://travis-ci.com/joshuatz/git-date-extractor) [![codecov](https://codecov.io/gh/joshuatz/git-date-extractor/badge.svg?branch=master)](https://codecov.io/gh/joshuatz/git-date-extractor?branch=master)
+# git-date-extractor [![Build Status](https://travis-ci.org/joshuatz/git-date-extractor.svg?branch=master)](https://travis-ci.org/github/joshuatz/git-date-extractor) [![codecov](https://codecov.io/gh/joshuatz/git-date-extractor/badge.svg?branch=master)](https://codecov.io/gh/joshuatz/git-date-extractor?branch=master)  [![npm](https://img.shields.io/npm/v/git-date-extractor)](https://www.npmjs.com/package/git-date-extractor)
 
 > Easily extract file dates based on git history, and optionally cache in a easy to parse JSON file.
 
@@ -131,6 +131,8 @@ $ git-dates --help
 
 > For the CLI, you can pass files either directly via the `--files` flag, such as `--files=[alpha.txt,bravo.txt]`, or as final arguments to the command, such as `git-date-extractor --outputToFile=true alpha.txt bravo.txt`
 
+> For passing filenames to the CLI (e.g. with `xargs`), be careful of special characters and/or spaces in filenames.
+
 ## Options
 
 Both the CLI and the main method accept the same options:
@@ -192,6 +194,7 @@ The `gitCommitHook` lets you tell the script that it is being triggered by a hoo
 	- `--amend` is not used to inject it into the last commit, since this could easily trigger a hook loop
 
 Here is how I have this setup as a pre-commit hook. This is a little over-complicated; this could be simplified further:
+
 ```sh
 #!/bin/bash
 # Get list of changed files - everything but "deletes"
@@ -204,6 +207,7 @@ https://joshuatz.com/projects/applications/git-date-extractor-npm-package-and-cl
 ## Major updates
 Version | Date | Notes
 --- | --- | ---
+3.0.0 | 5/31/2020 | Fix CLI projectRootPath issues, refactor tests, and cleanup.
 2.0.0 | 11/01/2019 | Refactored a bunch of stuff to be async. Main export is now async, which makes it incompatible with the previous version and necessitated a major version bump.
 
 ## Note about accuracy

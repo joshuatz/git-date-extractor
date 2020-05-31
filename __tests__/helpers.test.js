@@ -1,6 +1,6 @@
 // @ts-check
-import test from 'ava';
-import * as helpers from '../src/helpers';
+const test = require('ava').default;
+const helpers = require('../src/helpers');
 /**
 * Helpers testing
 */
@@ -104,7 +104,7 @@ test('Option validator', t => {
 });
 
 test('Null destination', t => {
-	t.true(['NUL', '/dev/null'].indexOf(helpers.getNullDestination()) !== -1);
+	t.true(['NUL', '/dev/null'].includes(helpers.getNullDestination()));
 });
 
 test('semver info extractor', t => {

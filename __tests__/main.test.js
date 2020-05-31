@@ -1,6 +1,6 @@
 // @ts-check
-import test from 'ava';
-import {iDebugLog} from '../src/tst-helpers';
+const test = require('ava').default;
+const {iDebugLog} = require('../src/tst-helpers');
 
 const childProc = require('child_process');
 const fse = require('fs-extra');
@@ -10,7 +10,6 @@ const tstHelpers = require('../src/tst-helpers');
 
 // Set up some paths for testing
 const cacheFileName = 'cache.json';
-const tempSubDirName = 'subdir';
 const tempDirNames = {
 	mainPostTest: 'tempdir-main-post',
 	mainPreTest: 'tempdir-main-pre'
@@ -41,7 +40,7 @@ test('main - integration test - git post commit', async t => {
 	const tempDirName = tempDirNames.mainPostTest;
 	const tempDirPath = posixNormalize(__dirname + '/' + tempDirName);
 	const cacheFilePath = posixNormalize(`${tempDirPath}/${cacheFileName}`);
-	const {testFiles} = tstHelpers.buildTestDir(tempDirPath, tempSubDirName, true);
+	const {testFiles, testFilesNamesOnly} = tstHelpers.buildTestDir(tempDirPath, true);
 	const checkTimeDelayMs = 5000;
 	// Git add the files, since we are emulating a post commit
 	childProc.execSync('git add . && git commit -m "added files"', {
@@ -78,7 +77,13 @@ test('main - integration test - git post commit', async t => {
 	t.deepEqual(result, savedResult);
 	// Check that last commit was from self
 	t.truthy(tstHelpers.wasLastCommitAutoAddCache(tempDirPath, cacheFileName));
-	// Check that actual numbers came back for stamps
+
+	// Check that actual numbers came back for stamps for files,
+	// but ignore .dotdir, as those are blocked by default
+	delete testFilesNamesOnly['.dotdir'];
+	tstHelpers.testForStampInResults(t, testFilesNamesOnly, result);
+
+	// Check a specific file stamp to verify it makes sense
 	const alphaStamp = result['alpha.txt'];
 	t.true(typeof (alphaStamp.created) === 'number');
 	t.true(typeof (alphaStamp.modified) === 'number');
@@ -93,7 +98,7 @@ test('main - integration test - git pre commit', async t => {
 	// Create test dir
 	const tempDirName = tempDirNames.mainPreTest;
 	const tempDirPath = posixNormalize(__dirname + '/' + tempDirName);
-	const {testFiles} = tstHelpers.buildTestDir(tempDirPath, tempSubDirName, true, cacheFileName);
+	const {testFiles} = tstHelpers.buildTestDir(tempDirPath, true, cacheFileName);
 	const checkTimeDelayMs = 8000;
 	// Wait a bit so that we can make sure there is a difference in stamps
 	await (new Promise((resolve) => {
@@ -156,7 +161,6 @@ test('main - integration test - git pre commit', async t => {
 
 // Teardown dir and files
 test.serial.after.always(async () => {
-	// eslint-disable-next-line guard-for-in
 	for (const key in perfTimings) {
 		perfTimings[key].elapsed = perfTimings[key].stop - perfTimings[key].start;
 	}

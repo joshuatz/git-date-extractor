@@ -70,7 +70,7 @@ const FilelistHandler = (function() {
 					const pathDirName = path.basename(pathStr);
 					let blocked = false;
 					// Check internal block list of directories
-					if (internalDirBlockList.indexOf(pathDirName) !== -1) {
+					if (internalDirBlockList.includes(pathDirName)) {
 						blocked = true;
 					}
 					if (!blocked) {
@@ -110,10 +110,10 @@ const FilelistHandler = (function() {
 	 */
 	FilelistHandlerInner.prototype.getIsFileOnWhitelist = function(filePath) {
 		const fileName = path.basename(filePath);
-		if (this.alwaysAllowFileNames.indexOf(fileName) !== -1) {
+		if (this.alwaysAllowFileNames.includes(fileName)) {
 			return true;
 		}
-		if (this.alwaysAllowFilePaths.indexOf(filePath) !== -1) {
+		if (this.alwaysAllowFilePaths.includes(filePath)) {
 			return true;
 		}
 		return false;
@@ -146,7 +146,7 @@ const FilelistHandler = (function() {
 		const fileName = path.basename(filePath);
 		checkExists = typeof (checkExists) === "boolean" ? checkExists : false;
 		// Block tracking the actual timestamps file - IMPORTANT: blocks hook loop!
-		if (this.usesCache && filePath.indexOf(posixNormalize(this.inputOptions.outputFileName)) !== -1) {
+		if (this.usesCache && filePath.includes(posixNormalize(this.inputOptions.outputFileName))) {
 			// Only let this be overrwritten by allowFiles whitelist if gitcommithook is equal to 'none' or unset
 			if (this.inputOptions.gitCommitHook === 'pre' || this.inputOptions.gitCommitHook === 'post') {
 				return false;
@@ -159,7 +159,7 @@ const FilelistHandler = (function() {
 			// Block tracking any files outside the indicated content dirs
 			for (let x = 0; x < this.fullPathContentDirs.length; x++) {
 				const fullContentDirPath = this.fullPathContentDirs[x];
-				if (filePath.indexOf(posixNormalize(fullContentDirPath)) !== -1) {
+				if (filePath.includes(posixNormalize(fullContentDirPath))) {
 					found = true;
 					break;
 				}
@@ -170,10 +170,10 @@ const FilelistHandler = (function() {
 			}
 		}
 		// Block tracking any on blacklist
-		if (this.usesBlockFiles && this.inputOptions.blockFiles.indexOf(fileName) !== -1) {
+		if (this.usesBlockFiles && this.inputOptions.blockFiles.includes(fileName)) {
 			shouldBlock = true;
 		}
-		if (this.usesBlockFiles && this.inputOptions.blockFiles.indexOf(filePath) !== -1) {
+		if (this.usesBlockFiles && this.inputOptions.blockFiles.includes(filePath)) {
 			shouldBlock = true;
 		}
 		/* istanbul ignore if */

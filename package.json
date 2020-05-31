@@ -1,6 +1,6 @@
 {
 	"name": "git-date-extractor",
-	"version": "2.0.0",
+	"version": "3.0.0",
 	"description": "Easily extract file dates based on git history, and optionally cache in a easy to parse JSON file.",
 	"license": "MIT",
 	"repository": "joshuatz/git-date-extractor",
@@ -35,16 +35,16 @@
 	],
 	"dependencies": {
 		"fs-extra": "^8.1.0",
-		"meow": "^5.0.0",
+		"meow": "^7.0.1",
 		"walkdir": "^0.4.1"
 	},
 	"devDependencies": {
-		"@types/fs-extra": "^8.0.0",
-		"@types/node": "^12.7.5",
-		"ava": "^2.1.0",
-		"codecov": "^3.5.0",
-		"nyc": "^14.1.1",
-		"xo": "^0.24.0"
+		"@types/fs-extra": "^9.0.1",
+		"@types/node": "^14.0.5",
+		"ava": "^3.8.2",
+		"codecov": "^3.7.0",
+		"nyc": "^15.0.1",
+		"xo": "^0.25.4"
 	},
 	"nyc": {
 		"reporter": [
@@ -64,7 +64,13 @@
 			"camelcase": "off",
 			"complexity": "off",
 			"arrow-parens": "off",
-			"brace-style": "off"
+			"brace-style": "off",
+			"unicorn/prevent-abbreviations": "off",
+			"unicorn/no-for-loop": "off",
+			"guard-for-in": "off",
+			"unicorn/prefer-set-has": "off",
+			"unicorn/better-regex": "off",
+			"unicorn/prefer-number-properties": "off"
 		},
 		"ignores": [
 			"**/*d.ts"

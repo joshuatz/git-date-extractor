@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 'use strict';
+global.calledViaCLI = true;
 const meow = require('meow');
 const {validateOptions} = require('./helpers');
 const gitDateExtractor = require('.');
@@ -39,32 +40,26 @@ const cli = meow(`
 		},
 		outputFileName: {
 			type: 'string',
-			default: undefined,
 			alias: 'outFile'
 		},
 		outputFileGitAdd: {
 			type: 'boolean',
-			default: undefined,
 			alias: 'gitAdd'
 		},
 		files: {
 			type: 'string',
-			default: undefined,
 			alias: 'file'
 		},
 		onlyIn: {
 			type: 'string',
-			default: undefined,
 			alias: 'dirs'
 		},
 		blockFiles: {
 			type: 'string',
-			default: undefined,
 			alias: 'blocklist'
 		},
 		allowFiles: {
 			type: 'string',
-			default: undefined,
 			alias: 'whitelist'
 		},
 		gitCommitHook: {
@@ -74,8 +69,10 @@ const cli = meow(`
 		},
 		projectRootPath: {
 			type: 'string',
-			default: undefined,
 			alias: 'rootDir'
+		},
+		debug: {
+			type: 'boolean'
 		}
 	}
 });

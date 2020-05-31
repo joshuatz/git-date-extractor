@@ -2,7 +2,7 @@
 const childProc = require('child_process');
 const path = require('path');
 const fse = require('fs-extra');
-const {replaceInObj, projectRootPathTrailingSlash} = require('./helpers');
+const {replaceInObj, projectRootPathTrailingSlash, posixNormalize} = require('./helpers');
 
 /**
  * Test if the last commit in the log is from self (auto add of cache file)
@@ -21,6 +21,7 @@ function wasLastCommitAutoAddCache(gitDir, cacheFileName) {
 		const commitMsgMatch = /AUTO: Updated/.test(gitCommitMsg);
 		const changedFilesMatch = changedFiles === cacheFileName;
 		return commitMsgMatch && changedFilesMatch;
+	// eslint-disable-next-line no-unused-vars
 	} catch (error) {
 		return false;
 	}
@@ -44,34 +45,67 @@ function iDebugLog(msg) {
 }
 
 /**
- * Build a test dir based on inputs
- * @param {string} tempDirPath - The full path of the temp dir
- * @param {string} tempSubDirName - the name of the subdir
- * @param {boolean} gitInit - if `git init` should be ran in dir
- * @param {string} [cacheFileName] - If cache file should be created, pass name
- * @returns {object} info about created test dir
+ * Get list of test files paths to use (not created)
+ * @param {string} dirPath - The full path dir where temp files should go
  */
-function buildTestDir(tempDirPath, tempSubDirName, gitInit, cacheFileName) {
-	const testFiles = {
-		alpha: `${tempDirPath}/alpha.txt`,
-		bravo: `${tempDirPath}/bravo.txt`,
-		charlie: `${tempDirPath}/charlie.txt`,
+function getTestFilePaths(dirPath) {
+	const subDirName = 'subdir';
+	const dotDirName = '.dotdir';
+	return {
+		alpha: `${dirPath}/alpha.txt`,
+		bravo: `${dirPath}/bravo.txt`,
+		charlie: `${dirPath}/charlie.txt`,
+		space: `${dirPath}/space test.png`,
+		specialChars: `${dirPath}/special-chars.file.gif`,
 		subdir: {
-			delta: `${tempDirPath}/${tempSubDirName}/delta.txt`,
-			echo: `${tempDirPath}/${tempSubDirName}/echo.txt`
+			delta: `${dirPath}/${subDirName}/delta.txt`,
+			echo: `${dirPath}/${subDirName}/echo.txt`
+		},
+		[dotDirName]: {
+			foxtrot: `${dirPath}/${dotDirName}/foxtrot.txt`
 		}
 	};
+}
+
+/**
+ * Build a local directory, filled with dummy files
+ * @param {string} dirPath - Absolute path of where the directory should be created
+ * @param {DirListing} dirListing - Listing of files to create, using absolute paths
+ */
+function buildDir(dirPath, dirListing) {
+	/**
+	 * Note: build operation must be done non-async, since
+	 * file creation depends on dir creation
+	 */
+	fse.ensureDirSync(dirPath);
+	fse.emptyDirSync(dirPath);
+	for (const key in dirListing) {
+		const val = dirListing[key];
+		if (typeof val === 'string') {
+			fse.ensureFileSync(val);
+		} else {
+			buildDir(`${dirPath}/${key}`, val);
+		}
+	}
+}
+
+/**
+ * Build a test dir based on inputs
+ * @param {string} tempDirPath - The full path of the temp dir
+ * @param {boolean} gitInit - if `git init` should be ran in dir
+ * @param {string} [cacheFileName] - If cache file should be created, pass name
+ */
+function buildTestDir(tempDirPath, gitInit, cacheFileName) {
+	const testFiles = getTestFilePaths(tempDirPath);
 	const testFilesRelative = replaceInObj(testFiles, filePath => {
 		return path.normalize(filePath).replace(path.normalize(projectRootPathTrailingSlash), '');
 	});
-	fse.ensureDirSync(tempDirPath);
-	fse.emptyDirSync(tempDirPath);
-	fse.ensureFileSync(testFiles.alpha);
-	fse.ensureFileSync(testFiles.bravo);
-	fse.ensureFileSync(testFiles.charlie);
-	fse.ensureDirSync(`${tempDirPath}/${tempSubDirName}`);
-	fse.ensureFileSync(testFiles.subdir.delta);
-	fse.ensureFileSync(testFiles.subdir.echo);
+	const testFilesNamesOnly = replaceInObj(testFiles, filePath => {
+		const filename = path.normalize(filePath).replace(path.normalize(tempDirPath), '');
+		// Remove any beginning slashes, and posix normalize
+		return posixNormalize(filename.replace(/^[\/\\]{1,2}/g, ''));
+	});
+	buildDir(tempDirPath, testFilesRelative);
 	if (typeof (cacheFileName) === 'string') {
 		fse.ensureFileSync(`${tempDirPath}/${cacheFileName}`);
 	}
@@ -85,6 +119,7 @@ function buildTestDir(tempDirPath, tempSubDirName, gitInit, cacheFileName) {
 	return {
 		testFiles,
 		testFilesRelative,
+		testFilesNamesOnly,
 		stamp
 	};
 }
@@ -117,8 +152,37 @@ function touchFileSync(filePath, byAppending, OPT_useShell) {
 		const now = new Date();
 		try {
 			fse.utimesSync(filePath, now, now);
+		// eslint-disable-next-line no-unused-vars
 		} catch (error) {
 			fse.closeSync(fse.openSync(filePath, 'w'));
+		}
+	}
+}
+
+/**
+ * Require that all input files have a corresponding stamp entry in results
+ * @param {import('ava').ExecutionContext} testContext
+ * @param {DirListing} files - Input file list
+ * @param {StampCache} results - Output results from scraper
+ */
+function testForStampInResults(testContext, files, results) {
+	for (const key in files) {
+		if (typeof files[key] === 'object') {
+			/** @type {DirListing} */
+			const dirListing = (files[key]);
+			testForStampInResults(testContext, dirListing, results);
+		} else {
+			/** @type {string} */
+			const filePath = (files[key]);
+			const stampEntry = results[filePath];
+			const testMsg = JSON.stringify({
+				filePath,
+				stampEntry,
+				results
+			}, null, 4);
+			testContext.true(typeof stampEntry === 'object', testMsg);
+			testContext.true(typeof stampEntry.created === 'number', testMsg);
+			testContext.true(typeof stampEntry.modified === 'number', testMsg);
 		}
 	}
 }
@@ -128,5 +192,8 @@ module.exports = {
 	iDebugLog,
 	buildTestDir,
 	removeTestDir,
-	touchFileSync
+	touchFileSync,
+	getTestFilePaths,
+	buildDir,
+	testForStampInResults
 };

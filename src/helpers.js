@@ -74,7 +74,7 @@ function _validateOptions(input) {
 		moddedOptions.gitCommitHook = 'none';
 	}
 	// Reset invalid git commit hook selection
-	if (typeof (moddedOptions.gitCommitHook) === 'string' && ['pre', 'post', 'none'].indexOf(moddedOptions.gitCommitHook) === -1) {
+	if (typeof (moddedOptions.gitCommitHook) === 'string' && ['pre', 'post', 'none'].includes(moddedOptions.gitCommitHook) === false) {
 		moddedOptions.gitCommitHook = 'none';
 	}
 	// Force single file passed to array
@@ -98,16 +98,14 @@ function _validateOptions(input) {
 	if (!Array.isArray(moddedOptions.allowFiles)) {
 		moddedOptions.allowFiles = [];
 	}
-	// Debug - only allow for dev, and allow override
+	// Debug - auto set to true if local dev
 	/* istanbul ignore if */
-	if (typeof (moddedOptions.debug) === 'boolean') {
-		if (moddedOptions.debug === true && /.+\/laragon\/.+\/git-date-extractor.*/.test(posixNormalize(__dirname))) {
+	if (typeof (moddedOptions.debug) !== 'boolean') {
+		if (/.+\/laragon\/.+\/git-date-extractor-debug\/.*/.test(posixNormalize(__dirname))) {
 			moddedOptions.debug = true;
 		} else {
 			moddedOptions.debug = false;
 		}
-	} else {
-		moddedOptions.debug = false;
 	}
 	return moddedOptions;
 }
@@ -435,7 +433,6 @@ function execPromise(cmdStr, options) {
 	});
 }
 
-/* eslint-disable-next-line valid-jsdoc */
 /**
  * Promise wrapper around fs-extra stat
  * @param {string} filePath - Filepath to stat
@@ -484,6 +481,7 @@ function getIsInGitRepo(OPT_folder) {
 			cwd: executeInPath
 		});
 		return true;
+	// eslint-disable-next-line no-unused-vars
 	} catch (error) {
 		return false;
 	}
@@ -502,8 +500,7 @@ function getIsRelativePath(filePath) {
 let projectRootPath = isInNodeModules() ? posixNormalize(path.normalize(`${__dirname}/../..`)) : posixNormalize(`${__dirname}`);
 const callerDir = posixNormalize(process.cwd());
 /* istanbul ignore if */
-if (projectRootPath.indexOf(callerDir) === -1) {
-	// This shouldn't be the case
+if (projectRootPath.includes(posixNormalize(__dirname)) || projectRootPath.includes(callerDir) || global.calledViaCLI) {
 	projectRootPath = callerDir;
 }
 const projectRootPathTrailingSlash = projectRootPath + '/';
@@ -514,6 +511,7 @@ module.exports = {
 	getIsInGitRepo,
 	replaceInObj,
 	projectRootPath,
+	callerDir,
 	projectRootPathTrailingSlash,
 	getIsRelativePath,
 	isInNodeModules,

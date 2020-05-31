@@ -5,7 +5,7 @@ const readline = require('readline');
 const fse = require('fs-extra');
 // @ts-ignore
 const packageInfo = require('../package.json');
-const {posixNormalize, getIsInGitRepo, validateOptions, lazyAreObjsSame} = require('./helpers');
+const {posixNormalize, getIsInGitRepo, validateOptions, lazyAreObjsSame, callerDir} = require('./helpers');
 const {updateTimestampsCacheFile, getTimestampsFromFile} = require('./stamp-handler');
 const FilelistHandler = require('./filelist-handler');
 
@@ -21,10 +21,6 @@ async function main(options, opt_cb) {
 		stop: 0,
 		elapsed: 0
 	};
-	/* istanbul ignore if */
-	if (!getIsInGitRepo()) {
-		throw (new Error('Fatal Error: You are not in a git initialized project space! Please run git init.'));
-	}
 	const optionsObj = validateOptions(options);
 	/* istanbul ignore if */
 	if (optionsObj.debug) {
@@ -33,7 +29,14 @@ async function main(options, opt_cb) {
 			                ${packageInfo.version}
 			====================================
 		`);
-		console.log(optionsObj);
+		console.log({
+			finalizedOptions: optionsObj,
+			callerDir
+		});
+	}
+	/* istanbul ignore if */
+	if (!getIsInGitRepo()) {
+		throw (new Error('Fatal Error: You are not in a git initialized project space! Please run git init.'));
 	}
 	/**
 	* @type StampCache
@@ -52,6 +55,7 @@ async function main(options, opt_cb) {
 				timestampsCache = JSON.parse(fse.readFileSync(optionsObj.outputFileName).toString());
 				readCacheFileSuccess = true;
 				readCacheFileContents = JSON.parse(JSON.stringify(timestampsCache));
+			// eslint-disable-next-line no-unused-vars
 			} catch (error) {
 				console.warn(`Could not read in cache file @ ${optionsObj.outputFileName}`);
 			}

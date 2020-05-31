@@ -1,6 +1,5 @@
 // @ts-check
-import test from 'ava';
-
+const test = require('ava').default;
 const childProc = require('child_process');
 const fse = require('fs-extra');
 const stHandler = require('../src/stamp-handler');
