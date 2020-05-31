@@ -500,7 +500,7 @@ function getIsRelativePath(filePath) {
 let projectRootPath = isInNodeModules() ? posixNormalize(path.normalize(`${__dirname}/../..`)) : posixNormalize(`${__dirname}`);
 const callerDir = posixNormalize(process.cwd());
 /* istanbul ignore if */
-if (projectRootPath.includes(callerDir) || global.calledViaCLI) {
+if (projectRootPath.includes(posixNormalize(__dirname)) || projectRootPath.includes(callerDir) || global.calledViaCLI) {
 	projectRootPath = callerDir;
 }
 const projectRootPathTrailingSlash = projectRootPath + '/';
