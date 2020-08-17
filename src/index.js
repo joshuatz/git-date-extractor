@@ -35,7 +35,7 @@ async function main(options, opt_cb) {
 		});
 	}
 	/* istanbul ignore if */
-	if (!getIsInGitRepo()) {
+	if (!getIsInGitRepo(optionsObj.projectRootPath)) {
 		throw (new Error('Fatal Error: You are not in a git initialized project space! Please run git init.'));
 	}
 	/**
