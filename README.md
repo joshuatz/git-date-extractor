@@ -210,5 +210,15 @@ Version | Date | Notes
 3.0.0 | 5/31/2020 | Fix CLI projectRootPath issues, refactor tests, and cleanup.
 2.0.0 | 11/01/2019 | Refactored a bunch of stuff to be async. Main export is now async, which makes it incompatible with the previous version and necessitated a major version bump.
 
-## Note about accuracy
-For files that have no git history, this tool has limited accuracy when it comes to creation time (birthtime), especially on Linux, with Node < 10.16.0 and/or Kernel <= 4.11 (where statx is not available).
+## Limitations
+### Environments With Shallow Git History
+If you use a offsite build / deploy system, your build process might be running in an environment with a *"shallow"* git history, perhaps without you even knowing it. These are environments that are not a true copy of the original git repo; instead they only hold a small subset of the history, perhaps even just the very last commit. Often these are cloned by using something like `git clone --depth 1 ...`.
+
+The problem with this is pretty immediate; if the only history that exists is the last commit, Git is going to *claim* that ***all*** files were created and modified whenever that commit was made. Furthermore, the timestamp of that commit might not even correspond with the true last commit, if your build system does something funky with rebasing or creating temporary deploy branches.
+
+My advice to work around this is pretty much the same as my general advice for the best use of this tool anyways - run it locally, and commit the results (as a file) to your repo. To streamline this process, you can automate it with a git hook, and even ensure that other collaborators do so as well by using something like [husky](https://www.npmjs.com/package/husky).
+
+> 🐛 - See my findings for Vercel summarized in [this issue](https://github.com/joshuatz/git-date-extractor/issues/7#issuecomment-682298968)
+
+### Environments With No Git History
+For files that have no git history, this tool has limited accuracy when it comes to creation time (birthtime), especially on Linux, with Node < 10.16.0 and/or Kernel <= 4.11 (where statx is not available). For details on this, checkout [my related PR](https://github.com/joshuatz/git-date-extractor/issues/1) and [my blog post on the topic](https://joshuatz.com/posts/2019/unix-linux-file-creation-stamps-aka-birthtime-and-nodejs/).
