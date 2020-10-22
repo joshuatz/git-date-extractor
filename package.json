@@ -15,7 +15,7 @@
 	},
 	"main": "src/index.js",
 	"engines": {
-		"node": ">=8"
+		"node": ">=10"
 	},
 	"scripts": {
 		"test": "xo && nyc ava",
@@ -70,7 +70,8 @@
 			"guard-for-in": "off",
 			"unicorn/prefer-set-has": "off",
 			"unicorn/better-regex": "off",
-			"unicorn/prefer-number-properties": "off"
+			"unicorn/prefer-number-properties": "off",
+			"prefer-named-capture-group": "off"
 		},
 		"ignores": [
 			"**/*d.ts"
