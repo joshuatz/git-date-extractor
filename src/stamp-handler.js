@@ -1,5 +1,3 @@
-// @ts-check
-
 const childProc = require('child_process');
 const fse = require('fs-extra');
 const {replaceZeros, getIsInGitRepo, getIsValidStampVal, getFsBirth, execPromise, statPromise} = require('./helpers');
@@ -8,7 +6,7 @@ const {replaceZeros, getIsInGitRepo, getIsValidStampVal, getFsBirth, execPromise
 * Updates the timestamp cache file and checks it into source control, depending on settings
 * @param {string} cacheFilePath - the path of the files to save the cache out to
 * @param {Object} jsonObj - The updated timestamps JSON to save to file
-* @param {FinalizedOptions} optionsObj - Options
+* @param {import('./types').FinalizedOptions} optionsObj - Options
 */
 function updateTimestampsCacheFile(cacheFilePath, jsonObj, optionsObj) {
 	const {gitCommitHook} = optionsObj;
@@ -45,14 +43,14 @@ function updateTimestampsCacheFile(cacheFilePath, jsonObj, optionsObj) {
 /**
 * Get timestamps for a given file
 * @param {string} fullFilePath - The *full* file path to get stamps for
-* @param {StampCache} [cache] - Object with key/pair values corresponding to valid stamps
+* @param {import('./types').FinalizedOptions} optionsObj - Options
+* @param {import('./types').StampCache} [cache] - Object with key/pair values corresponding to valid stamps
 * @param {string} [cacheKey] - What is the stamp currently stored under for this file?
-* @param {FinalizedOptions} optionsObj - Options
-* @param {boolean} forceCreatedRefresh - If true, any existing created stamps in cache will be ignored, and re-calculated
-* @returns {Promise<StampObject>} - Timestamp object for file
+* @param {boolean} [forceCreatedRefresh] - If true, any existing created stamps in cache will be ignored, and re-calculated
+* @returns {Promise<import('./types').StampObject>} - Timestamp object for file
 */
 // eslint-disable-next-line max-params
-async function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, forceCreatedRefresh) {
+async function getTimestampsFromFile(fullFilePath, optionsObj, cache, cacheKey, forceCreatedRefresh) {
 	const {gitCommitHook} = optionsObj;
 	const ignoreCreatedCache = typeof (forceCreatedRefresh) === 'boolean' ? forceCreatedRefresh : false;
 	const timestampsCache = typeof (cache) === 'object' ? cache : {};
@@ -65,7 +63,7 @@ async function getTimestampsFromFile(fullFilePath, cache, cacheKey, optionsObj, 
 	};
 	// Lookup values in cache
 	/**
-	* @type {StampObject}
+	* @type {import('./types').StampObject}
 	*/
 	let dateVals = timestampsCache[cacheKey];
 	dateVals = typeof (dateVals) === 'object' ? dateVals : {

@@ -1,4 +1,3 @@
-// @ts-check
 const test = require('ava').default;
 const childProc = require('child_process');
 const fse = require('fs-extra');
@@ -36,7 +35,7 @@ test.serial('save cache file', t => {
 		}
 	};
 	/**
-	 * @type {InputOptions}
+	 * @type {import('../src/types').InputOptions}
 	 */
 	const dummyOptions = {
 		files: [],

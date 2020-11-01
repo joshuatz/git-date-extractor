@@ -1,4 +1,3 @@
-// @ts-check
 const test = require('ava').default;
 const {iDebugLog} = require('../src/tst-helpers');
 
@@ -61,7 +60,7 @@ test('main - integration test - git post commit', async t => {
 	// Now run full process - get stamps, save to file, etc.
 	perfTimings.postCommit.start = (new Date()).getTime();
 	/**
-	 * @type {InputOptions}
+	 * @type {import('../src/types').InputOptions}
 	 */
 	const dummyOptions = {
 		projectRootPath: tempDirPath,
@@ -110,7 +109,7 @@ test('main - integration test - git pre commit', async t => {
 	tstHelpers.touchFileSync(testFiles.alpha, true);
 	// Now run full process - get stamps, save to file, etc.
 	/**
-	 * @type {InputOptions}
+	 * @type {import('../src/types').InputOptions}
 	 */
 	const dummyOptions = {
 		projectRootPath: tempDirPath,

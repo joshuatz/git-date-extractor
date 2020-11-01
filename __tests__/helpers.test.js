@@ -1,6 +1,6 @@
-// @ts-check
 const test = require('ava').default;
 const helpers = require('../src/helpers');
+
 /**
 * Helpers testing
 */
@@ -79,7 +79,7 @@ test('isInNodeModules', t => {
 
 test('Option validator', t => {
 	/**
-	 * @type {InputOptions}
+	 * @type {import('../src/types').InputOptions}
 	 */
 	const dummyOptions = {
 		files: '[alpha.txt, bravo.txt]',

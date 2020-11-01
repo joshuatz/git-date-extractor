@@ -1,4 +1,3 @@
-// @ts-check
 const childProc = require('child_process');
 const path = require('path');
 const fse = require('fs-extra');
@@ -28,6 +27,10 @@ function wasLastCommitAutoAddCache(gitDir, cacheFileName) {
 }
 
 /* istanbul ignore next */
+/**
+ * Log something to the console and (if configured) log file
+ * @param {any} msg
+ */
 function iDebugLog(msg) {
 	console.log(msg);
 	if (typeof (msg) === 'object') {
@@ -70,7 +73,7 @@ function getTestFilePaths(dirPath) {
 /**
  * Build a local directory, filled with dummy files
  * @param {string} dirPath - Absolute path of where the directory should be created
- * @param {DirListing} dirListing - Listing of files to create, using absolute paths
+ * @param {import('./types').DirListing} dirListing - Listing of files to create, using absolute paths
  */
 function buildDir(dirPath, dirListing) {
 	/**
@@ -124,6 +127,10 @@ function buildTestDir(tempDirPath, gitInit, cacheFileName) {
 	};
 }
 
+/**
+ * Delete a temporary directory
+ * @param {string} tempDirPath
+ */
 async function removeTestDir(tempDirPath) {
 	// Just delete the top level dir
 	await fse.emptyDir(tempDirPath);
@@ -162,13 +169,13 @@ function touchFileSync(filePath, byAppending, OPT_useShell) {
 /**
  * Require that all input files have a corresponding stamp entry in results
  * @param {import('ava').ExecutionContext} testContext
- * @param {DirListing} files - Input file list
- * @param {StampCache} results - Output results from scraper
+ * @param {import('./types').DirListing} files - Input file list
+ * @param {import('./types').StampCache} results - Output results from scraper
  */
 function testForStampInResults(testContext, files, results) {
 	for (const key in files) {
 		if (typeof files[key] === 'object') {
-			/** @type {DirListing} */
+			/** @type {import('./types').DirListing} */
 			const dirListing = (files[key]);
 			testForStampInResults(testContext, dirListing, results);
 		} else {

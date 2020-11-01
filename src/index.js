@@ -1,6 +1,4 @@
-// @ts-check
 'use strict';
-
 const readline = require('readline');
 const fse = require('fs-extra');
 // @ts-ignore
@@ -11,7 +9,7 @@ const FilelistHandler = require('./filelist-handler');
 
 /**
 * Main - called by CLI and the main export
-* @param {InputOptions} options - input options
+* @param {import('./types').InputOptions} options - input options
 * @param {function} [opt_cb] - Optional callback
 * @returns {Promise<object>} - Stamp or info object
 */
@@ -39,7 +37,7 @@ async function main(options, opt_cb) {
 		throw (new Error('Fatal Error: You are not in a git initialized project space! Please run git init.'));
 	}
 	/**
-	* @type StampCache
+	* @type {import('./types').StampCache}
 	*/
 	let timestampsCache = {};
 	const readCacheFile = typeof (optionsObj.outputFileName) === 'string' && optionsObj.outputFileName.length > 0;
@@ -71,7 +69,7 @@ async function main(options, opt_cb) {
 		console.log(`${filePaths.length} files queued up. Starting scrape...\n`);
 	}
 	/**
-	 * @type {Array<Promise>}
+	 * @type {Array<Promise<any>>}
 	 */
 	const promiseQueue = [];
 
@@ -99,7 +97,7 @@ async function main(options, opt_cb) {
 		currLocalPath = posixNormalize(currLocalPath);
 
 		const asyncResolver = async () => {
-			const result = await getTimestampsFromFile(currFullPath, timestampsCache, currLocalPath, optionsObj, false);
+			const result = await getTimestampsFromFile(currFullPath, optionsObj, timestampsCache, currLocalPath, false);
 			// Update results object
 			timestampsCache[currLocalPath] = result;
 			return result;
@@ -133,7 +131,7 @@ async function main(options, opt_cb) {
 
 /**
 * Wrapper around main
-* @param {InputOptions} options - input options
+* @param {import('./types').InputOptions} options - input options
 * @param {function} [opt_cb] - Optional callback
 * @returns {Promise<object>} - stamp object or info obj
 */

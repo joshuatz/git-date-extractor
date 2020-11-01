@@ -1,5 +1,3 @@
-/// <reference path="../types.d.ts"/>
-// @ts-check
 const test = require('ava').default;
 const path = require('path');
 const fse = require('fs-extra');
@@ -35,7 +33,7 @@ test.after.always(async () => {
 
 test('Restricting files by directory (onlyIn)', t => {
 	/**
-	 * @type {InputOptions}
+	 * @type {import('../src/types').InputOptions}
 	 */
 	const dummyOptions = {
 		onlyIn: [tempSubDirPath],
@@ -61,7 +59,7 @@ test('Restricting files by directory (onlyIn)', t => {
 test('Restrict by directory + allowFiles override', t => {
 	// Without the use of allowFiles, normally alpha.txt would be blocked by the onlyIn option, since it is not in the subdir
 	/**
-	 * @type {InputOptions}
+	 * @type {import('../src/types').InputOptions}
 	 */
 	const dummyOptions = {
 		onlyIn: [tempSubDirPath],
@@ -91,7 +89,7 @@ test('Restrict by directory + allowFiles override', t => {
 
 test('Restricting files by explicit file list', t => {
 	/**
-	 * @type {InputOptions}
+	 * @type {import('../src/types').InputOptions}
 	 */
 	const dummyOptions = {
 		onlyIn: [],
@@ -121,7 +119,7 @@ test('Restricting files by explicit file list', t => {
 
 test('Testing automatic dir parsing and filtering, + block list', t => {
 	/**
-	 * @type {InputOptions}
+	 * @type {import('../src/types').InputOptions}
 	 */
 	const dummyOptions = {
 		onlyIn: [],

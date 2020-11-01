@@ -1,31 +1,28 @@
-// @ts-check
-/// <reference path="../types.d.ts"/>
 const path = require('path');
 const fse = require('fs-extra');
 const walkdir = require('walkdir');
 const {posixNormalize, getIsRelativePath} = require('./helpers');
 
-const FilelistHandler = (function() {
-	const internalDirBlockList = [
-		'node_modules',
-		'.git'
-	];
-	const internalDirBlockPatterns = [
-		// Block all .___ directories
-		/^\..*$/,
-		// Block all __tests__ and similar
-		/^__[^_]+__$/
-	];
-	const internalFileBlockPatterns = [
-		// .__ files
-		/^\..+$/
-	];
-	/**
-	*
-	* @param {FinalizedOptions} optionsObj - Options
-	*/
-	function FilelistHandlerInner(optionsObj) {
+const internalDirBlockList = [
+	'node_modules',
+	'.git'
+];
+const internalDirBlockPatterns = [
+	// Block all .___ directories
+	/^\..*$/,
+	// Block all __tests__ and similar
+	/^__[^_]+__$/
+];
+const internalFileBlockPatterns = [
+	// .__ files
+	/^\..+$/
+];
+
+class FilelistHandler {
+	/** @param {import('./types').FinalizedOptions} optionsObj */
+	constructor(optionsObj) {
 		this.inputOptions = optionsObj;
+
 		/**
 		* @type Array<{relativeToProjRoot:string, fullPath: string}>
 		*/
@@ -34,7 +31,6 @@ const FilelistHandler = (function() {
 		// Parse filter options
 		/**
 		 * Construct a list of directories that will be scanned for files
-		 * If
 		 */
 		this.contentDirs = [optionsObj.projectRootPath];
 		if (Array.isArray(optionsObj.onlyIn) && optionsObj.onlyIn.length > 0) {
@@ -103,12 +99,13 @@ const FilelistHandler = (function() {
 			}
 		}
 	}
+
 	/**
 	 * Checks if a file is on the allowFiles list (aka the whitelist)
 	 * @param {string} filePath - the filepath to check
 	 * @returns {boolean} - If the file is on the whitelist
 	 */
-	FilelistHandlerInner.prototype.getIsFileOnWhitelist = function(filePath) {
+	getIsFileOnWhitelist(filePath) {
 		const fileName = path.basename(filePath);
 		if (this.alwaysAllowFileNames.includes(fileName)) {
 			return true;
@@ -117,14 +114,15 @@ const FilelistHandler = (function() {
 			return true;
 		}
 		return false;
-	};
+	}
+
 	/**
 	* Add a file to the queue of file paths to retrieve dates for
 	* @param {string} filePath  - The path of the file
 	* @param {boolean} [checkExists]  - If the func should check that the file actually exists before adding
 	* @returns {boolean} - If the file was added
 	*/
-	FilelistHandlerInner.prototype.pushFilePath = function(filePath, checkExists) {
+	pushFilePath(filePath, checkExists) {
 		if (this.getShouldTrackFile(filePath, checkExists)) {
 			this.filePaths.push({
 				relativeToProjRoot: path.normalize(filePath).replace(path.normalize(this.inputOptions.projectRootPathTrailingSlash), ''),
@@ -133,18 +131,19 @@ const FilelistHandler = (function() {
 			return true;
 		}
 		return false;
-	};
+	}
+
 	/**
-	*
 	* @param {string} filePath - The path of the file
 	* @param {boolean} [checkExists]  - If the func should check that the file actually exists before adding
 	* @returns {boolean} - If the file should be tracked / dates fetched
 	*/
-	FilelistHandlerInner.prototype.getShouldTrackFile = function(filePath, checkExists) {
+	getShouldTrackFile(filePath, checkExists) {
 		let shouldBlock = false;
 		filePath = posixNormalize(filePath);
 		const fileName = path.basename(filePath);
 		checkExists = typeof (checkExists) === "boolean" ? checkExists : false;
+
 		// Block tracking the actual timestamps file - IMPORTANT: blocks hook loop!
 		if (this.usesCache && filePath.includes(posixNormalize(this.inputOptions.outputFileName))) {
 			// Only let this be overrwritten by allowFiles whitelist if gitcommithook is equal to 'none' or unset
@@ -153,6 +152,7 @@ const FilelistHandler = (function() {
 			}
 			shouldBlock = true;
 		}
+
 		// Triggered by options.onlyIn
 		if (this.restrictByDir) {
 			let found = false;
@@ -169,7 +169,8 @@ const FilelistHandler = (function() {
 				shouldBlock = true;
 			}
 		}
-		// Block tracking any on blacklist
+
+		// Block tracking any on blocklist
 		if (this.usesBlockFiles && this.inputOptions.blockFiles.includes(fileName)) {
 			shouldBlock = true;
 		}
@@ -193,9 +194,9 @@ const FilelistHandler = (function() {
 
 			return false;
 		}
+
 		return true;
-	};
-	return FilelistHandlerInner;
-})();
+	}
+}
 
 module.exports = FilelistHandler;

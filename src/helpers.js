@@ -1,7 +1,3 @@
-/// <reference path="../types.d.ts"/>
-// @ts-check
-'use strict';
-
 const path = require('path');
 const childProc = require('child_process');
 const os = require('os');
@@ -20,9 +16,10 @@ const posixNormalize = function(filePath) {
 /**
  * Extract an array from a stringified array
  * @param {string} str - input string
- * @returns {array} - Array output
+ * @returns {string[]} - Array output
  */
 function extractArrFromStr(str) {
+	/** @type {string[]} */
 	let arr = [];
 	if (typeof (str) === 'string') {
 		// Test for input string resembling array
@@ -41,7 +38,7 @@ function extractArrFromStr(str) {
 /**
  * Internal options validator / modder
  * @param {object} input - Options object
- * @returns {FinalizedOptions} - The finalized, formatted options
+ * @returns {import('./types').FinalizedOptions} - The finalized, formatted options
  */
 function _validateOptions(input) {
 	const moddedOptions = JSON.parse(JSON.stringify(input));
@@ -112,13 +109,13 @@ function _validateOptions(input) {
 
 /**
  * Validates input options and forces them to conform
- * @param {InputOptions} input - Options
- * @returns {FinalizedOptions} - The vaidated and formatted options
+ * @param {import('./types').InputOptions} input - Options
+ * @returns {import('./types').FinalizedOptions} - The vaidated and formatted options
  */
 function validateOptions(input) {
 	const moddedOptions = _validateOptions(input);
 	/**
-	 * @type {FinalizedOptions}
+	 * @type {import('./types').FinalizedOptions}
 	 */
 	const finalOptions = {
 		outputToFile: moddedOptions.outputToFile,
@@ -138,11 +135,12 @@ function validateOptions(input) {
 
 /**
  * Run a replacer function over an object to modify it
- * @param {object} inputObj - the object to replace values in
- * @param {function} replacerFunc - cb func to take value, modify, and return it
- * @returns {object} - Object with replacements
+ * @param {{[k: string]: any}} inputObj - the object to replace values in
+ * @param {(input: any) => any} replacerFunc - cb func to take value, modify, and return it
+ * @returns {{[k: string]: any}} - Object with replacements
  */
 function replaceInObj(inputObj, replacerFunc) {
+	/** @type {{[k: string]: any}} */
 	const outputObj = {};
 	for (let x = 0; x < Object.keys(inputObj).length; x++) {
 		const key = Object.keys(inputObj)[x];
@@ -243,8 +241,8 @@ function getHighest(numArr) {
 
 /**
  * Get the highest and lowest stamps from FS Stats
- * @param {object} stats - FS Stats object
- * @returns {object} - Highest and lowest points
+ * @param {import('fs').Stats} stats - FS Stats object
+ * @returns {{lowestMs: number, highestMs: number}} - Highest and lowest points
  */
 function getEndOfRangeFromStat(stats) {
 	const lowestMs = getLowest([
@@ -276,10 +274,11 @@ function getEndOfRangeFromStat(stats) {
  * Get the birth times of a file
  * @param {string} filePath - The filepath of the file to get birth of
  * @param {boolean} [preferNative] - Prefer using Node FS - don't try for debugfs
- * @param {object} [OPT_fsStats] - Stats object, if you already have it ready
+ * @param {import('fs-extra').Stats} [OPT_fsStats] - Stats object, if you already have it ready
  * @returns {Promise<BirthStamps>} - Birth stamps
  */
 async function getFsBirth(filePath, preferNative, OPT_fsStats) {
+	/** @type {BirthStamps} */
 	const birthStamps = {
 		birthtime: null,
 		birthtimeMs: null,
@@ -452,7 +451,7 @@ function statPromise(filePath) {
 
 /**
  * Replaces any root level values on an object that are 0, with a different value
- * @param {object} inputObj  - The object to replace zeros on
+ * @param {{[k: string]: any}} inputObj  - The object to replace zeros on
  * @param {any} replacement - what to replace the zeros with
  * @returns {object} The object with zeros replaced
  */
