@@ -3,10 +3,16 @@
 	"version": "3.1.1",
 	"description": "Easily extract file dates based on git history, and optionally cache in a easy to parse JSON file.",
 	"license": "MIT",
-	"repository": "joshuatz/git-date-extractor",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/joshuatz/git-date-extractor.git"
+	},
+	"bugs": {
+		"url": "https://github.com/joshuatz/git-date-extractor/issues"
+	},
+	"homepage": "https://github.com/joshuatz/git-date-extractor",
 	"author": {
 		"name": "Joshua Tzucker",
-		"email": "joshua.tz@gmail.com",
 		"url": "https://joshuatz.com/?utm_source=gitdateextractor&utm_medium=package"
 	},
 	"bin": {
