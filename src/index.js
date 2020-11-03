@@ -11,7 +11,7 @@ const FilelistHandler = require('./filelist-handler');
 * Main - called by CLI and the main export
 * @param {import('./types').InputOptions} options - input options
 * @param {function} [opt_cb] - Optional callback
-* @returns {Promise<object>} - Stamp or info object
+* @returns {Promise<import('./types').StampCache>} - Stamp or info object
 */
 async function main(options, opt_cb) {
 	const perfTimings = {
@@ -133,7 +133,7 @@ async function main(options, opt_cb) {
 * Wrapper around main
 * @param {import('./types').InputOptions} options - input options
 * @param {function} [opt_cb] - Optional callback
-* @returns {Promise<object>} - stamp object or info obj
+* @returns {Promise<import('./types').StampCache>} - stamp object or info obj
 */
 async function getStamps(options, opt_cb) {
 	return main(options, opt_cb);

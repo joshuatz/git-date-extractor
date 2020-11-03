@@ -51,3 +51,5 @@ export interface FinalizedOptions {
 export interface DirListing {
 	[index: string]: string | DirListing;
 }
+
+export type UnpackedPromise<T> = T extends Promise<infer U> ? U : T;

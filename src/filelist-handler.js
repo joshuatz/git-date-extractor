@@ -37,12 +37,12 @@ class FilelistHandler {
 			this.contentDirs = optionsObj.onlyIn;
 		}
 		this.fullPathContentDirs = this.contentDirs.map(function(pathStr) {
-			return path.normalize(getIsRelativePath(pathStr) ? (optionsObj.projectRootPath + '/' + pathStr) : pathStr);
+			return posixNormalize(getIsRelativePath(pathStr) ? (optionsObj.projectRootPath + '/' + pathStr) : pathStr);
 		});
 
 		this.alwaysAllowFileNames = optionsObj.allowFiles;
 		this.alwaysAllowFilePaths = this.alwaysAllowFileNames.map(function(pathStr) {
-			return path.normalize(getIsRelativePath(pathStr) ? (optionsObj.projectRootPath + '/' + pathStr) : pathStr);
+			return posixNormalize(getIsRelativePath(pathStr) ? (optionsObj.projectRootPath + '/' + pathStr) : pathStr);
 		});
 		this.restrictByDir = Array.isArray(optionsObj.onlyIn) && optionsObj.onlyIn.length > 0;
 		this.usesCache = typeof (optionsObj.outputFileName) === 'string';
@@ -50,7 +50,8 @@ class FilelistHandler {
 		// Process input files
 		for (let x = 0; x < optionsObj.files.length; x++) {
 			let filePath = optionsObj.files[x];
-			filePath = path.normalize(getIsRelativePath(filePath) ? (optionsObj.projectRootPathTrailingSlash + filePath) : filePath);
+			// Make sure to get full file path
+			filePath = posixNormalize(getIsRelativePath(filePath) ? (optionsObj.projectRootPathTrailingSlash + filePath) : filePath);
 			this.pushFilePath(filePath, true);
 		}
 		/**
@@ -101,11 +102,11 @@ class FilelistHandler {
 	}
 
 	/**
-	 * Checks if a file is on the allowFiles list (aka the whitelist)
+	 * Checks if a file is on the allowFiles list (aka approved)
 	 * @param {string} filePath - the filepath to check
-	 * @returns {boolean} - If the file is on the whitelist
+	 * @returns {boolean} - If the file is on the approved list
 	 */
-	getIsFileOnWhitelist(filePath) {
+	getIsFileOnApproveList(filePath) {
 		const fileName = path.basename(filePath);
 		if (this.alwaysAllowFileNames.includes(fileName)) {
 			return true;
@@ -123,9 +124,10 @@ class FilelistHandler {
 	* @returns {boolean} - If the file was added
 	*/
 	pushFilePath(filePath, checkExists) {
+		filePath = posixNormalize(filePath);
 		if (this.getShouldTrackFile(filePath, checkExists)) {
 			this.filePaths.push({
-				relativeToProjRoot: path.normalize(filePath).replace(path.normalize(this.inputOptions.projectRootPathTrailingSlash), ''),
+				relativeToProjRoot: filePath.replace(posixNormalize(this.inputOptions.projectRootPathTrailingSlash), ''),
 				fullPath: filePath
 			});
 			return true;
@@ -146,7 +148,7 @@ class FilelistHandler {
 
 		// Block tracking the actual timestamps file - IMPORTANT: blocks hook loop!
 		if (this.usesCache && filePath.includes(posixNormalize(this.inputOptions.outputFileName))) {
-			// Only let this be overrwritten by allowFiles whitelist if gitcommithook is equal to 'none' or unset
+			// Only let this be overrwritten by allowFiles approvelist if gitcommithook is equal to 'none' or unset
 			if (this.inputOptions.gitCommitHook === 'pre' || this.inputOptions.gitCommitHook === 'post') {
 				return false;
 			}
@@ -187,8 +189,8 @@ class FilelistHandler {
 			}
 		}
 		if (shouldBlock) {
-			// Let  override with allowFiles
-			if (this.getIsFileOnWhitelist(filePath)) {
+			// Let override with allowFiles
+			if (this.getIsFileOnApproveList(filePath)) {
 				return true;
 			}
 

@@ -53,7 +53,8 @@ function _validateOptions(input) {
 		// Remove trailing slashes
 		moddedOptions.projectRootPath = moddedOptions.projectRootPath.replace(/[\/\\]{0,2}$/, '');
 	}
-	moddedOptions.projectRootPathTrailingSlash = moddedOptions.projectRootPath + '/';
+	moddedOptions.projectRootPath = posixNormalize(moddedOptions.projectRootPath);
+	moddedOptions.projectRootPathTrailingSlash = posixNormalize(moddedOptions.projectRootPath + '/');
 	if (typeof (moddedOptions.outputToFile) !== 'boolean') {
 		moddedOptions.outputToFile = false;
 	}
@@ -498,7 +499,6 @@ function getIsRelativePath(filePath) {
 // @todo this is probably going to need to be revised
 let projectRootPath = isInNodeModules() ? posixNormalize(path.normalize(`${__dirname}/../..`)) : posixNormalize(`${__dirname}`);
 const callerDir = posixNormalize(process.cwd());
-/* istanbul ignore if */
 if (projectRootPath.includes(posixNormalize(__dirname)) || projectRootPath.includes(callerDir) || global.calledViaCLI) {
 	projectRootPath = callerDir;
 }

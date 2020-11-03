@@ -1,7 +1,8 @@
 const childProc = require('child_process');
-const path = require('path');
 const fse = require('fs-extra');
-const {replaceInObj, projectRootPathTrailingSlash, posixNormalize} = require('./helpers');
+const {replaceInObj, posixNormalize} = require('./src/helpers');
+const os = require('os');
+const {sep} = require('path');
 
 /**
  * Test if the last commit in the log is from self (auto add of cache file)
@@ -52,6 +53,7 @@ function iDebugLog(msg) {
  * @param {string} dirPath - The full path dir where temp files should go
  */
 function getTestFilePaths(dirPath) {
+	dirPath = posixNormalize(dirPath);
 	const subDirName = 'subdir';
 	const dotDirName = '.dotdir';
 	return {
@@ -70,26 +72,34 @@ function getTestFilePaths(dirPath) {
 	};
 }
 
+async function makeTempDir() {
+	return fse.mkdtemp(`${os.tmpdir()}${sep}`);
+}
+
 /**
  * Build a local directory, filled with dummy files
  * @param {string} dirPath - Absolute path of where the directory should be created
- * @param {import('./types').DirListing} dirListing - Listing of files to create, using absolute paths
+ * @param {import('./src/types').DirListing} dirListing - Listing of files to create, using absolute paths
  */
-function buildDir(dirPath, dirListing) {
+async function buildDir(dirPath, dirListing) {
+	await fse.ensureDir(dirPath);
+	await fse.emptyDir(dirPath);
 	/**
-	 * Note: build operation must be done non-async, since
-	 * file creation depends on dir creation
+	 * @param {string | import('./src/types').DirListing} pathOrObj
+	 * @returns {Promise<any>}
 	 */
-	fse.ensureDirSync(dirPath);
-	fse.emptyDirSync(dirPath);
-	for (const key in dirListing) {
-		const val = dirListing[key];
-		if (typeof val === 'string') {
-			fse.ensureFileSync(val);
-		} else {
-			buildDir(`${dirPath}/${key}`, val);
+	const recursingCreator = async (pathOrObj) => {
+		if (typeof pathOrObj === 'string') {
+			return fse.ensureFile(pathOrObj);
 		}
-	}
+
+		return Promise.all(Object.keys(pathOrObj).map(key => {
+			const val = pathOrObj[key];
+			return recursingCreator(val);
+		}));
+	};
+
+	await recursingCreator(dirListing);
 }
 
 /**
@@ -98,43 +108,42 @@ function buildDir(dirPath, dirListing) {
  * @param {boolean} gitInit - if `git init` should be ran in dir
  * @param {string} [cacheFileName] - If cache file should be created, pass name
  */
-function buildTestDir(tempDirPath, gitInit, cacheFileName) {
+async function buildTestDir(tempDirPath, gitInit, cacheFileName) {
+	// Make sure tempDirPath does *not* end with slash
+	tempDirPath = tempDirPath.replace(/[\/\\]+$/, '');
 	const testFiles = getTestFilePaths(tempDirPath);
-	const testFilesRelative = replaceInObj(testFiles, filePath => {
-		return path.normalize(filePath).replace(path.normalize(projectRootPathTrailingSlash), '');
-	});
-	const testFilesNamesOnly = replaceInObj(testFiles, filePath => {
-		const filename = path.normalize(filePath).replace(path.normalize(tempDirPath), '');
+
+	// Some pre-formatted different versions of the test file paths
+	const testFilesRelative = /** @type {ReturnType<typeof getTestFilePaths>} */ (replaceInObj(testFiles, filePath => {
+		return posixNormalize(filePath).replace(posixNormalize(`${tempDirPath}/`), '');
+	}));
+	const testFilesNamesOnly = /** @type {ReturnType<typeof getTestFilePaths>} */ (replaceInObj(testFiles, filePath => {
+		const filename = posixNormalize(filePath).replace(posixNormalize(tempDirPath), '');
 		// Remove any beginning slashes, and posix normalize
 		return posixNormalize(filename.replace(/^[\/\\]{1,2}/g, ''));
-	});
-	buildDir(tempDirPath, testFilesRelative);
+	}));
+
+	// Actually build the files
+	await buildDir(tempDirPath, testFiles);
+
+	// Create empty cache file
 	if (typeof (cacheFileName) === 'string') {
 		fse.ensureFileSync(`${tempDirPath}/${cacheFileName}`);
 	}
-	const stamp = Math.floor((new Date()).getTime() / 1000);
+
 	/* istanbul ignore else */
 	if (gitInit) {
 		childProc.execSync(`git init`, {
 			cwd: tempDirPath
 		});
 	}
+
 	return {
 		testFiles,
 		testFilesRelative,
 		testFilesNamesOnly,
-		stamp
+		stamp: Math.floor((new Date()).getTime() / 1000)
 	};
-}
-
-/**
- * Delete a temporary directory
- * @param {string} tempDirPath
- */
-async function removeTestDir(tempDirPath) {
-	// Just delete the top level dir
-	await fse.emptyDir(tempDirPath);
-	await fse.rmdir(tempDirPath);
 }
 
 /**
@@ -169,27 +178,31 @@ function touchFileSync(filePath, byAppending, OPT_useShell) {
 /**
  * Require that all input files have a corresponding stamp entry in results
  * @param {import('ava').ExecutionContext} testContext
- * @param {import('./types').DirListing} files - Input file list
- * @param {import('./types').StampCache} results - Output results from scraper
+ * @param {import('./src/types').DirListing} files - Input file list. Should be relative (or whatever matches `results` object keys format)
+ * @param {import('./src/types').StampCache} results - Output results from scraper
+ * @param {string[]} [skipFiles] Files to excludes from checking
  */
-function testForStampInResults(testContext, files, results) {
+function testForStampInResults(testContext, files, results, skipFiles = []) {
 	for (const key in files) {
 		if (typeof files[key] === 'object') {
-			/** @type {import('./types').DirListing} */
+			/** @type {import('./src/types').DirListing} */
 			const dirListing = (files[key]);
-			testForStampInResults(testContext, dirListing, results);
+			testForStampInResults(testContext, dirListing, results, skipFiles);
 		} else {
 			/** @type {string} */
 			const filePath = (files[key]);
-			const stampEntry = results[filePath];
-			const testMsg = JSON.stringify({
-				filePath,
-				stampEntry,
-				results
-			}, null, 4);
-			testContext.true(typeof stampEntry === 'object', testMsg);
-			testContext.true(typeof stampEntry.created === 'number', testMsg);
-			testContext.true(typeof stampEntry.modified === 'number', testMsg);
+			if (!skipFiles.includes(filePath)) {
+				const stampEntry = results[filePath];
+				const testMsg = JSON.stringify({
+					filePath,
+					skipFiles,
+					stampEntry,
+					results
+				}, null, 4);
+				testContext.true(typeof stampEntry === 'object', testMsg);
+				testContext.true(typeof stampEntry.created === 'number', testMsg);
+				testContext.true(typeof stampEntry.modified === 'number', testMsg);
+			}
 		}
 	}
 }
@@ -198,9 +211,9 @@ module.exports = {
 	wasLastCommitAutoAddCache,
 	iDebugLog,
 	buildTestDir,
-	removeTestDir,
 	touchFileSync,
 	getTestFilePaths,
 	buildDir,
-	testForStampInResults
+	testForStampInResults,
+	makeTempDir
 };

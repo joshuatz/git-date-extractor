@@ -3,17 +3,19 @@ const childProc = require('child_process');
 const fse = require('fs-extra');
 const stHandler = require('../src/stamp-handler');
 const {validateOptions} = require('../src/helpers');
-const {wasLastCommitAutoAddCache} = require('../src/tst-helpers');
+const {wasLastCommitAutoAddCache, makeTempDir} = require('../tst-helpers');
 
 // Set up some paths for testing
-const tempDirName = 'tempdir-stamphandler';
-const tempDirPath = __dirname + '/' + tempDirName;
+/** @type {string} */
+let tempDirPath;
 const cacheFileName = 'cache.json';
-const cacheFilePath = `${tempDirPath}/${cacheFileName}`;
+/** @type {string} */
+let cacheFilePath;
 
 // Create test files
-test.before(() => {
-	fse.ensureDirSync(tempDirPath);
+test.before(async () => {
+	tempDirPath = await makeTempDir();
+	cacheFilePath = `${tempDirPath}/${cacheFileName}`;
 	// Git init - will fail if git is not installed
 	childProc.execSync(`git init`, {
 		cwd: tempDirPath
