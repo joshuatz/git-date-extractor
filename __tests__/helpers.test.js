@@ -50,6 +50,7 @@ test('replaceInObj', t => {
 			}
 		}
 	};
+	/** @param {string | number} input */
 	const replacer = function(input) {
 		if (typeof (input) === 'string') {
 			return input.toLowerCase();

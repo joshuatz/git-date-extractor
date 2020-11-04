@@ -27,7 +27,9 @@
 		"test": "xo && nyc ava",
 		"lint": "xo",
 		"test-nolint": "nyc ava",
-		"build": "rm -rf dist && tsc"
+		"build": "rm -rf dist && tsc",
+		"tsc-check": "tsc --noEmit",
+		"benchmark": "node scripts/perf-stress-test.js"
 	},
 	"files": [
 		"dist/"
