@@ -307,12 +307,10 @@ async function getFsBirth(filePath, preferNative, OPT_fsStats) {
 		try {
 			// Grab inode number, and device
 			const inode = fsStats.ino;
-			const fullStatStr = (await execPromise(`stat ${filePath}`)).toString();
+			const fullStatStr = await execPromise(`stat ${filePath}`);
 			const deviceStr = /Device:\s{0,1}([a-zA-Z0-9\/]+)/.exec(fullStatStr)[1];
 			// Make call to debugfs
-			const debugFsInfo = (await execPromise(`debugfs -R 'stat <${inode}> --format=%W' ${deviceStr}`, {
-				stdio: 'pipe'
-			})).toString();
+			const debugFsInfo = await execPromise(`debugfs -R 'stat <${inode}> --format=%W' ${deviceStr}`);
 			// Parse for timestamp
 			const birthTimeSec = parseInt(debugFsInfo, 10);
 			if (!Number.isNaN(birthTimeSec) && birthTimeSec !== 0) {
@@ -418,8 +416,8 @@ function getKernelInfo() {
 /**
  * Promise wrapper around child_process exec
  * @param {string} cmdStr - Command to execute
- * @param {any} [options] - Exec options
- * @returns {Promise<Buffer>} - Stdout buffer
+ * @param {import('child_process').ExecOptions} [options] - Exec options
+ * @returns {Promise<string>} - Stdout string
  */
 function execPromise(cmdStr, options) {
 	return new Promise((resolve, reject) => {
@@ -431,6 +429,50 @@ function execPromise(cmdStr, options) {
 			resolve(stdout);
 		});
 	});
+}
+
+/**
+ * Promise wrapper around child_process.spawn
+ * @param {string} cmdStr
+ * @param {string[]} [args]
+ * @param {import('child_process').SpawnOptions} [options]
+ * @returns {Promise<string>} stdout
+ */
+function spawnPromise(cmdStr, args, options) {
+	return new Promise((resolve, reject) => {
+		let out = '';
+		const spawned = childProc.spawn(cmdStr, args, options);
+		spawned.stdout.on('data', data => {
+			out += data.toString();
+		});
+		spawned.stderr.on('data', data => {
+			out += data.toString();
+		});
+		spawned.on('error', reject);
+		spawned.on('close', (exitCode) => {
+			if (exitCode === 0) {
+				resolve(out);
+			} else {
+				reject(out);
+			}
+		});
+	});
+}
+
+/**
+ * Get return value of a promise, with a default value, in case it falls
+ * @param {Promise<any>} promise
+ * @param {any} [defaultVal]
+ */
+async function failSafePromise(promise, defaultVal = null) {
+	let res = defaultVal;
+	try {
+		res = await promise;
+	// eslint-disable-next-line no-unused-vars
+	} catch (error) {
+		// Ignore
+	}
+	return res;
 }
 
 /**
@@ -524,5 +566,7 @@ module.exports = {
 	getKernelInfo,
 	getSemverInfo,
 	execPromise,
-	statPromise
+	spawnPromise,
+	statPromise,
+	failSafePromise
 };

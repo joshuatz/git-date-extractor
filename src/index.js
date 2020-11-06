@@ -4,7 +4,7 @@ const fse = require('fs-extra');
 // @ts-ignore
 const packageInfo = require('../package.json');
 const {posixNormalize, getIsInGitRepo, validateOptions, lazyAreObjsSame, callerDir} = require('./helpers');
-const {updateTimestampsCacheFile, getTimestampsFromFile} = require('./stamp-handler');
+const {updateTimestampsCacheFile, getTimestampsFromFilesBulk} = require('./stamp-handler');
 const FilelistHandler = require('./filelist-handler');
 
 /**
@@ -68,10 +68,11 @@ async function main(options, opt_cb) {
 		// Add line break
 		console.log(`${filePaths.length} files queued up. Starting scrape...\n`);
 	}
+
 	/**
-	 * @type {Array<Promise<any>>}
+	 * @type {Array<{fullPath: string, localPath: string}>}
 	 */
-	const promiseQueue = [];
+	const filesToGet = [];
 
 	filePaths.forEach((filePathMeta, index) => {
 		let currFullPath = filePathMeta.fullPath;
@@ -96,17 +97,24 @@ async function main(options, opt_cb) {
 		currFullPath = posixNormalize(currFullPath);
 		currLocalPath = posixNormalize(currLocalPath);
 
-		const asyncResolver = async () => {
-			const result = await getTimestampsFromFile(currFullPath, optionsObj, timestampsCache, currLocalPath, false);
-			// Update results object
-			timestampsCache[currLocalPath] = result;
-			return result;
-		};
-		promiseQueue.push(asyncResolver());
+		filesToGet.push({
+			fullPath: currFullPath,
+			localPath: currLocalPath
+		});
 	});
 
-	// Wait for all the files to be processed
-	await Promise.all(promiseQueue);
+	// Get stamps in bulk
+	const results = await getTimestampsFromFilesBulk(filesToGet.map(f => {
+		return {
+			fullFilePath: f.fullPath,
+			cacheKey: f.localPath,
+			resultKey: f.localPath
+		};
+	}), optionsObj, timestampsCache, false);
+	// Update results object
+	timestampsCache = {
+		...results
+	};
 
 	// Check if we need to write out results to disk
 	if (writeCacheFile) {

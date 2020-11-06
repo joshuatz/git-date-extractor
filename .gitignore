@@ -8,3 +8,6 @@ __tests__/tempdir-*
 debug.txt
 *.0x
 dist
+isolate-*-v8.log
+*.clinic-*.html
+.clinic
