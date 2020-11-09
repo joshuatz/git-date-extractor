@@ -180,13 +180,18 @@ class FilelistHandler {
 			shouldBlock = true;
 		}
 		/* istanbul ignore if */
-		if (fse.lstatSync(filePath).isDirectory() === true) {
-			return false;
-		}
-		if (checkExists) {
-			if (fse.existsSync(filePath) === false) {
+		let exists = true;
+		try {
+			if (fse.lstatSync(filePath).isDirectory() === true) {
 				return false;
 			}
+			exists = true;
+		// eslint-disable-next-line no-unused-vars
+		} catch (error) {
+			exists = false;
+		}
+		if (checkExists && !exists) {
+			return false;
 		}
 		if (shouldBlock) {
 			// Let override with allowFiles

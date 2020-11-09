@@ -129,9 +129,7 @@ async function getTimestampsFromFilesBulk(filesToGet, optionsObj, cache, forceCr
 				dateVals = replaceZeros(dateVals, Math.floor((new Date()).getTime() / 1000));
 			} catch (error) {
 				/* istanbul ignore next */
-				console.log(`getting git dates failed for ${fullFilePath}`);
-				/* istanbul ignore next */
-				console.error(error);
+				console.log(`getting git dates failed for ${fullFilePath}`, error);
 			}
 
 			return {

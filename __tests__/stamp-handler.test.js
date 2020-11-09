@@ -104,6 +104,29 @@ test('Reuse timestamps from cache file when possible', async (t) => {
 	t.true(saved[nonTestingFileName].modified === fakeNonsenseStamp);
 });
 
+test('Allow running when some requested files are not found', async (t) => {
+	const {tempDirPath, cacheFilePath, cacheFileName} = await setup();
+	const {testFilesRelative, testFilesNamesOnly} = await buildTestDir(tempDirPath, false, cacheFileName);
+	// Fake file, does not exist
+	const fakeFilePath = `${tempDirPath}/acb123.bat`;
+	/**
+	 * @type {import('../src/types').InputOptions}
+	 */
+	const dummyOptions = {
+		files: [testFilesRelative.charlie, fakeFilePath, `${tempDirPath}/${testFilesNamesOnly.bravo}`],
+		projectRootPath: tempDirPath,
+		outputToFile: true,
+		outputFileName: cacheFileName
+	};
+	// We are trying to get stamps for one file that does exist, and one that does not (ENOENT)
+	const result = await main.getStamps(dummyOptions);
+	/** @type {import('../src/types').StampCache} */
+	const saved = await fse.readJSON(cacheFilePath);
+	t.false(fakeFilePath in result);
+	t.true(testFilesRelative.charlie in result);
+	t.true(testFilesRelative.bravo in saved);
+});
+
 // Teardown - delete test files
 test.after.always(async () => {
 	await Promise.all(createdTempDirPaths.map(p => {
