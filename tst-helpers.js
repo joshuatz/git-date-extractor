@@ -80,10 +80,13 @@ async function makeTempDir() {
  * Build a local directory, filled with dummy files
  * @param {string} dirPath - Absolute path of where the directory should be created
  * @param {import('./src/types').DirListing} dirListing - Listing of files to create, using absolute paths
+ * @param {boolean} [empty] - Clear the directory out first, before building files
  */
-async function buildDir(dirPath, dirListing) {
+async function buildDir(dirPath, dirListing, empty = false) {
 	await fse.ensureDir(dirPath);
-	await fse.emptyDir(dirPath);
+	if (empty) {
+		await fse.emptyDir(dirPath);
+	}
 	/**
 	 * @param {string | import('./src/types').DirListing} pathOrObj
 	 * @returns {Promise<any>}
@@ -207,6 +210,15 @@ function testForStampInResults(testContext, files, results, skipFiles = []) {
 	}
 }
 
+/** @param {number} delayMs */
+const delay = (delayMs) => {
+	return new Promise((resolve) => {
+		setTimeout(() => {
+			resolve();
+		}, delayMs);
+	});
+};
+
 module.exports = {
 	wasLastCommitAutoAddCache,
 	iDebugLog,
@@ -215,5 +227,6 @@ module.exports = {
 	getTestFilePaths,
 	buildDir,
 	testForStampInResults,
-	makeTempDir
+	makeTempDir,
+	delay
 };

@@ -1,5 +1,5 @@
 const test = require('ava').default;
-const {iDebugLog, makeTempDir, buildTestDir, wasLastCommitAutoAddCache, testForStampInResults, touchFileSync} = require('../tst-helpers');
+const {iDebugLog, makeTempDir, buildTestDir, wasLastCommitAutoAddCache, testForStampInResults, touchFileSync, delay} = require('../tst-helpers');
 
 const childProc = require('child_process');
 const fse = require('fs-extra');
@@ -43,11 +43,7 @@ test('main - integration test - git post commit', async t => {
 		cwd: tempDirPath
 	});
 	// Wait a bit so that we can make sure there is a difference in stamps
-	await (new Promise((resolve) => {
-		setTimeout(() => {
-			resolve();
-		}, checkTimeDelayMs);
-	}));
+	await delay(checkTimeDelayMs);
 	// Touch alpha so it can be re-staged and committed - thus giving it a later modification stamp
 	touchFileSync(testFiles.alpha, true);
 	// Git commit all the files
@@ -97,11 +93,7 @@ test('main - integration test - git pre commit', async t => {
 	const {testFiles} = await buildTestDir(tempDirPath, true, cacheFileName);
 	const checkTimeDelayMs = 8000;
 	// Wait a bit so that we can make sure there is a difference in stamps
-	await (new Promise((resolve) => {
-		setTimeout(() => {
-			resolve();
-		}, checkTimeDelayMs);
-	}));
+	await delay(checkTimeDelayMs);
 	// Touch alpha so that it will have a different mtime value
 	touchFileSync(testFiles.alpha, true);
 	// Now run full process - get stamps, save to file, etc.
@@ -156,7 +148,7 @@ test('main - integration test - git pre commit', async t => {
 });
 
 // Teardown dir and files
-test.serial.after.always(async () => {
+test.after.always(async () => {
 	for (const k in perfTimings) {
 		const key = /** @type {keyof typeof perfTimings} */ (k);
 		perfTimings[key].elapsed = perfTimings[key].stop - perfTimings[key].start;

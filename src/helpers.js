@@ -59,9 +59,12 @@ function _validateOptions(input) {
 		moddedOptions.outputToFile = false;
 	}
 	if (moddedOptions.outputToFile) {
+		// Default outputFileName
 		if (typeof (moddedOptions.outputFileName) !== 'string' || moddedOptions.outputFileName.length === 0) {
 			moddedOptions.outputFileName = 'timestamps.json';
 		}
+	}
+	if (typeof moddedOptions.outputFileName === 'string') {
 		// Force outputFile (e.g. the cache file) to a full path if it is not
 		if (!path.isAbsolute(moddedOptions.outputFileName)) {
 			moddedOptions.outputFileName = posixNormalize(`${moddedOptions.projectRootPath}/${moddedOptions.outputFileName}`);

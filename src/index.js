@@ -34,7 +34,7 @@ async function main(options, opt_cb) {
 	}
 	/* istanbul ignore if */
 	if (!getIsInGitRepo(optionsObj.projectRootPath)) {
-		throw (new Error('Fatal Error: You are not in a git initialized project space! Please run git init.'));
+		throw (new Error(`Fatal Error: You are not in a git initialized project space! Please run git init in ${optionsObj.projectRootPath}.`));
 	}
 	/**
 	* @type {import('./types').StampCache}
@@ -47,15 +47,21 @@ async function main(options, opt_cb) {
 	// Load in cache if applicable
 	if (readCacheFile) {
 		if (fse.existsSync(optionsObj.outputFileName) === false) {
-			fse.writeFileSync(optionsObj.outputFileName, '{}');
+			if (optionsObj.debug) {
+				console.log(`Warning: Cache file ${optionsObj.outputFileName} does not already exist.`);
+			}
+			if (optionsObj.outputToFile) {
+				fse.writeFileSync(optionsObj.outputFileName, '{}');
+			}
 		} else {
 			try {
 				timestampsCache = JSON.parse(fse.readFileSync(optionsObj.outputFileName).toString());
 				readCacheFileSuccess = true;
+				// Lazy clone obj
 				readCacheFileContents = JSON.parse(JSON.stringify(timestampsCache));
 			// eslint-disable-next-line no-unused-vars
 			} catch (error) {
-				console.warn(`Could not read in cache file @ ${optionsObj.outputFileName}`);
+				console.log(`Warning: Could not read in cache file @ ${optionsObj.outputFileName}`);
 			}
 		}
 	}
@@ -113,6 +119,7 @@ async function main(options, opt_cb) {
 	}), optionsObj, timestampsCache, false);
 	// Update results object
 	timestampsCache = {
+		...timestampsCache,
 		...results
 	};
 
