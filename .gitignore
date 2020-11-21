@@ -11,3 +11,4 @@ dist
 isolate-*-v8.log
 *.clinic-*.html
 .clinic
+git-date-extractor*.tgz

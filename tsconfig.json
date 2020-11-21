@@ -7,7 +7,10 @@
 		"outDir": "./dist",
 		"module": "commonjs",
 		"moduleResolution": "node",
-		"noImplicitAny": true
+		"noImplicitAny": true,
+		"esModuleInterop": true,
+		"target": "es2018",
+		"lib": ["es2018"]
 	},
 	"include": [
 		"*.d.ts",

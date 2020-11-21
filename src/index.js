@@ -145,7 +145,7 @@ async function main(options, opt_cb) {
 }
 
 /**
-* Wrapper around main
+* Run the extractor with options
 * @param {import('./types').InputOptions} options - input options
 * @param {function} [opt_cb] - Optional callback
 * @returns {Promise<import('./types').StampCache>} - stamp object or info obj
