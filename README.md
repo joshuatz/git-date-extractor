@@ -14,7 +14,7 @@ It can run as either a CLI tool, or via JS, and returns an easy to parse JSON ob
 
 ## Quick Demo (CLI Usage):
 
-![Demo GIF](https://raw.githubusercontent.com/joshuatz/git-date-extractor/master/readme-assets/No_Options_Output_To_Console.gif)
+![Demo GIF](https://raw.githubusercontent.com/joshuatz/git-date-extractor/main/readme-assets/No_Options_Output_To_Console.gif)
 
 
 ## Install
@@ -207,6 +207,7 @@ https://joshuatz.com/projects/applications/git-date-extractor-npm-package-and-cl
 ## Major updates
 Version | Date | Notes
 --- | --- | ---
+4.0.0 | 11/21/2020 | Tons of bug fixes, performance improvements (2x!), TS types, and more.<br/><br/>Major version bump due to changes in types and input handling.
 3.0.0 | 5/31/2020 | Fix CLI projectRootPath issues, refactor tests, and cleanup.
 2.0.0 | 11/01/2019 | Refactored a bunch of stuff to be async. Main export is now async, which makes it incompatible with the previous version and necessitated a major version bump.
 

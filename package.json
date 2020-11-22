@@ -24,7 +24,7 @@
 		"node": ">=10"
 	},
 	"scripts": {
-		"test": "xo && nyc ava",
+		"test": "npm run tsc-check && xo && nyc ava",
 		"lint": "xo",
 		"test-nolint": "nyc ava",
 		"build": "rm -rf dist && tsc",
