@@ -1,6 +1,6 @@
-// @ts-check
 const test = require('ava').default;
 const helpers = require('../src/helpers');
+
 /**
 * Helpers testing
 */
@@ -50,6 +50,7 @@ test('replaceInObj', t => {
 			}
 		}
 	};
+	/** @param {string | number} input */
 	const replacer = function(input) {
 		if (typeof (input) === 'string') {
 			return input.toLowerCase();
@@ -79,7 +80,7 @@ test('isInNodeModules', t => {
 
 test('Option validator', t => {
 	/**
-	 * @type {InputOptions}
+	 * @type {import('../src/types').InputOptions}
 	 */
 	const dummyOptions = {
 		files: '[alpha.txt, bravo.txt]',

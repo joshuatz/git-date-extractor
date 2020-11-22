@@ -1,19 +1,17 @@
-// @ts-check
 'use strict';
-
 const readline = require('readline');
 const fse = require('fs-extra');
 // @ts-ignore
 const packageInfo = require('../package.json');
 const {posixNormalize, getIsInGitRepo, validateOptions, lazyAreObjsSame, callerDir} = require('./helpers');
-const {updateTimestampsCacheFile, getTimestampsFromFile} = require('./stamp-handler');
+const {updateTimestampsCacheFile, getTimestampsFromFilesBulk} = require('./stamp-handler');
 const FilelistHandler = require('./filelist-handler');
 
 /**
 * Main - called by CLI and the main export
-* @param {InputOptions} options - input options
+* @param {import('./types').InputOptions} options - input options
 * @param {function} [opt_cb] - Optional callback
-* @returns {Promise<object>} - Stamp or info object
+* @returns {Promise<import('./types').StampCache>} - Stamp or info object
 */
 async function main(options, opt_cb) {
 	const perfTimings = {
@@ -36,10 +34,10 @@ async function main(options, opt_cb) {
 	}
 	/* istanbul ignore if */
 	if (!getIsInGitRepo(optionsObj.projectRootPath)) {
-		throw (new Error('Fatal Error: You are not in a git initialized project space! Please run git init.'));
+		throw (new Error(`Fatal Error: You are not in a git initialized project space! Please run git init in ${optionsObj.projectRootPath}.`));
 	}
 	/**
-	* @type StampCache
+	* @type {import('./types').StampCache}
 	*/
 	let timestampsCache = {};
 	const readCacheFile = typeof (optionsObj.outputFileName) === 'string' && optionsObj.outputFileName.length > 0;
@@ -49,15 +47,21 @@ async function main(options, opt_cb) {
 	// Load in cache if applicable
 	if (readCacheFile) {
 		if (fse.existsSync(optionsObj.outputFileName) === false) {
-			fse.writeFileSync(optionsObj.outputFileName, '{}');
+			if (optionsObj.debug) {
+				console.log(`Warning: Cache file ${optionsObj.outputFileName} does not already exist.`);
+			}
+			if (optionsObj.outputToFile) {
+				fse.writeFileSync(optionsObj.outputFileName, '{}');
+			}
 		} else {
 			try {
 				timestampsCache = JSON.parse(fse.readFileSync(optionsObj.outputFileName).toString());
 				readCacheFileSuccess = true;
+				// Lazy clone obj
 				readCacheFileContents = JSON.parse(JSON.stringify(timestampsCache));
 			// eslint-disable-next-line no-unused-vars
 			} catch (error) {
-				console.warn(`Could not read in cache file @ ${optionsObj.outputFileName}`);
+				console.log(`Warning: Could not read in cache file @ ${optionsObj.outputFileName}`);
 			}
 		}
 	}
@@ -70,10 +74,11 @@ async function main(options, opt_cb) {
 		// Add line break
 		console.log(`${filePaths.length} files queued up. Starting scrape...\n`);
 	}
+
 	/**
-	 * @type {Array<Promise>}
+	 * @type {Array<{fullPath: string, localPath: string}>}
 	 */
-	const promiseQueue = [];
+	const filesToGet = [];
 
 	filePaths.forEach((filePathMeta, index) => {
 		let currFullPath = filePathMeta.fullPath;
@@ -98,17 +103,25 @@ async function main(options, opt_cb) {
 		currFullPath = posixNormalize(currFullPath);
 		currLocalPath = posixNormalize(currLocalPath);
 
-		const asyncResolver = async () => {
-			const result = await getTimestampsFromFile(currFullPath, timestampsCache, currLocalPath, optionsObj, false);
-			// Update results object
-			timestampsCache[currLocalPath] = result;
-			return result;
-		};
-		promiseQueue.push(asyncResolver());
+		filesToGet.push({
+			fullPath: currFullPath,
+			localPath: currLocalPath
+		});
 	});
 
-	// Wait for all the files to be processed
-	await Promise.all(promiseQueue);
+	// Get stamps in bulk
+	const results = await getTimestampsFromFilesBulk(filesToGet.map(f => {
+		return {
+			fullFilePath: f.fullPath,
+			cacheKey: f.localPath,
+			resultKey: f.localPath
+		};
+	}), optionsObj, timestampsCache, false);
+	// Update results object
+	timestampsCache = {
+		...timestampsCache,
+		...results
+	};
 
 	// Check if we need to write out results to disk
 	if (writeCacheFile) {
@@ -132,10 +145,10 @@ async function main(options, opt_cb) {
 }
 
 /**
-* Wrapper around main
-* @param {InputOptions} options - input options
+* Run the extractor with options
+* @param {import('./types').InputOptions} options - input options
 * @param {function} [opt_cb] - Optional callback
-* @returns {Promise<object>} - stamp object or info obj
+* @returns {Promise<import('./types').StampCache>} - stamp object or info obj
 */
 async function getStamps(options, opt_cb) {
 	return main(options, opt_cb);

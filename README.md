@@ -1,4 +1,4 @@
-# git-date-extractor [![Build Status](https://travis-ci.org/joshuatz/git-date-extractor.svg?branch=master)](https://travis-ci.org/github/joshuatz/git-date-extractor) [![codecov](https://codecov.io/gh/joshuatz/git-date-extractor/badge.svg?branch=master)](https://codecov.io/gh/joshuatz/git-date-extractor?branch=master)  [![npm](https://img.shields.io/npm/v/git-date-extractor)](https://www.npmjs.com/package/git-date-extractor)
+# git-date-extractor [![Build Status](https://travis-ci.org/joshuatz/git-date-extractor.svg?branch=main)](https://travis-ci.org/github/joshuatz/git-date-extractor) [![codecov](https://codecov.io/gh/joshuatz/git-date-extractor/badge.svg?branch=main)](https://codecov.io/gh/joshuatz/git-date-extractor?branch=main)  [![npm](https://img.shields.io/npm/v/git-date-extractor)](https://www.npmjs.com/package/git-date-extractor)
 
 > Easily extract file dates based on git history, and optionally cache in a easy to parse JSON file.
 
@@ -145,7 +145,7 @@ outputFileGitAdd | gitAdd | If saving to file, should the file be `git add`'ed a
 files | file | Specific files to get timestamps for. These should either be full file paths (e.g. `C:\dir\file.txt`) or relative to root of the scanned dir | `string[] or string` | NA - if empty, script will scan entire dir
 onlyIn | dirs | Filter files by specific directory | `string[] or string` | NA
 blockFiles | blocklist | Block certain files from being tracked | `string[] or string` | NA
-allowFiles | whitelist | Exception list of filepaths that will override certain blocks.<br>See advanced examples section. | `string[] or string | NA
+allowFiles | approvelist | Exception list of filepaths that will override certain blocks.<br>See advanced examples section. | `string[] or string | NA
 gitCommitHook | git-stage | Use this if you are running this script on a git hook.<br>For example, use `post` and the script will append a new commit with the changed timestamp file. | `"pre"` or `"post"` or `"none"` | `"none"`
 projectRootPath | rootDir | Top level directory containing your files.<br>Script should be able to detect automatically, but can also pass to be safe. | `string` | Auto-detected based on `proccess.cwd()`<br>or `__dirname`
 debug | debug | Might output extra meta info related to the development of this module | `boolean` | `false`
@@ -163,7 +163,7 @@ Setting `files` makes it run the fastest, since then it doesn't need to scan for
 
 However, here are some more advanced examples:
 
-### Allowing exceptions to files not in whitelisted directories
+### Allowing exceptions to files not in the approved directories
 Here is our example structure:
 - `alpha.txt`
 - `bravo.txt`

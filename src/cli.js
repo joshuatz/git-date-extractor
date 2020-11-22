@@ -60,7 +60,7 @@ const cli = meow(`
 		},
 		allowFiles: {
 			type: 'string',
-			alias: 'whitelist'
+			alias: 'approvelist'
 		},
 		gitCommitHook: {
 			type: 'string',

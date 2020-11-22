@@ -1,0 +1,7 @@
+// This seems to be necessary, since root tsconfig.json does not include this directory to avoid compiling it to /dist
+{
+	"compilerOptions": {
+		"checkJs": true,
+		"noImplicitAny": true
+	}
+}

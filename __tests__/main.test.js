@@ -1,19 +1,15 @@
-// @ts-check
 const test = require('ava').default;
-const {iDebugLog} = require('../src/tst-helpers');
+const {iDebugLog, makeTempDir, buildTestDir, wasLastCommitAutoAddCache, testForStampInResults, touchFileSync, delay} = require('../tst-helpers');
 
 const childProc = require('child_process');
 const fse = require('fs-extra');
 const main = require('../src');
 const {posixNormalize, getKernelInfo, getSemverInfo} = require('../src/helpers');
-const tstHelpers = require('../src/tst-helpers');
 
 // Set up some paths for testing
 const cacheFileName = 'cache.json';
-const tempDirNames = {
-	mainPostTest: 'tempdir-main-post',
-	mainPreTest: 'tempdir-main-pre'
-};
+/** @type {string[]} */
+const tempDirPaths = [];
 
 // Max variance for time diff
 const maxTimeVarianceSec = 2;
@@ -37,23 +33,19 @@ const perfTimings = {
  */
 test('main - integration test - git post commit', async t => {
 	// Create test dir
-	const tempDirName = tempDirNames.mainPostTest;
-	const tempDirPath = posixNormalize(__dirname + '/' + tempDirName);
+	const tempDirPath = await makeTempDir();
+	tempDirPaths.push(tempDirPath);
 	const cacheFilePath = posixNormalize(`${tempDirPath}/${cacheFileName}`);
-	const {testFiles, testFilesNamesOnly} = tstHelpers.buildTestDir(tempDirPath, true);
+	const {testFiles, testFilesNamesOnly} = await buildTestDir(tempDirPath, true);
 	const checkTimeDelayMs = 5000;
 	// Git add the files, since we are emulating a post commit
 	childProc.execSync('git add . && git commit -m "added files"', {
 		cwd: tempDirPath
 	});
 	// Wait a bit so that we can make sure there is a difference in stamps
-	await (new Promise((resolve) => {
-		setTimeout(() => {
-			resolve();
-		}, checkTimeDelayMs);
-	}));
+	await delay(checkTimeDelayMs);
 	// Touch alpha so it can be re-staged and committed - thus giving it a later modification stamp
-	tstHelpers.touchFileSync(testFiles.alpha, true);
+	touchFileSync(testFiles.alpha, true);
 	// Git commit all the files
 	childProc.execSync('git add . && git commit -m "added files"', {
 		cwd: tempDirPath
@@ -61,7 +53,7 @@ test('main - integration test - git post commit', async t => {
 	// Now run full process - get stamps, save to file, etc.
 	perfTimings.postCommit.start = (new Date()).getTime();
 	/**
-	 * @type {InputOptions}
+	 * @type {import('../src/types').InputOptions}
 	 */
 	const dummyOptions = {
 		projectRootPath: tempDirPath,
@@ -73,15 +65,15 @@ test('main - integration test - git post commit', async t => {
 	const result = await main.getStamps(dummyOptions);
 	perfTimings.postCommit.stop = (new Date()).getTime();
 	const savedResult = JSON.parse(fse.readFileSync(cacheFilePath).toString());
+
 	// Check that the value passed back via JS matches what was saved to JSON
 	t.deepEqual(result, savedResult);
 	// Check that last commit was from self
-	t.truthy(tstHelpers.wasLastCommitAutoAddCache(tempDirPath, cacheFileName));
+	t.truthy(wasLastCommitAutoAddCache(tempDirPath, cacheFileName));
 
 	// Check that actual numbers came back for stamps for files,
 	// but ignore .dotdir, as those are blocked by default
-	delete testFilesNamesOnly['.dotdir'];
-	tstHelpers.testForStampInResults(t, testFilesNamesOnly, result);
+	testForStampInResults(t, testFilesNamesOnly, result, [testFilesNamesOnly[".dotdir"].foxtrot]);
 
 	// Check a specific file stamp to verify it makes sense
 	const alphaStamp = result['alpha.txt'];
@@ -91,26 +83,22 @@ test('main - integration test - git post commit', async t => {
 	const timeDelay = Number(alphaStamp.modified) - Number(alphaStamp.created);
 	// Assume a small variance is OK
 	const timeDiff = Math.abs((Math.floor(checkTimeDelayMs / 1000)) - timeDelay);
-	t.true(timeDiff <= maxTimeVarianceSec, `Diff between created and modified should have been ${Math.floor(checkTimeDelayMs / 1000)}, but was ${timeDelay}. This variance of ${timeDiff} is beyond the accepted variance of ${maxTimeVarianceSec}.`);
+	t.true(timeDiff <= maxTimeVarianceSec, `Diff between created and modified should have been ${Math.floor(checkTimeDelayMs / 1000)}, but was ${timeDelay}. This variance of ${timeDiff} is beyond the accepted variance of ${maxTimeVarianceSec} (In ${tempDirPath}).`);
 });
 
 test('main - integration test - git pre commit', async t => {
 	// Create test dir
-	const tempDirName = tempDirNames.mainPreTest;
-	const tempDirPath = posixNormalize(__dirname + '/' + tempDirName);
-	const {testFiles} = tstHelpers.buildTestDir(tempDirPath, true, cacheFileName);
+	const tempDirPath = await makeTempDir();
+	tempDirPaths.push(tempDirPath);
+	const {testFiles} = await buildTestDir(tempDirPath, true, cacheFileName);
 	const checkTimeDelayMs = 8000;
 	// Wait a bit so that we can make sure there is a difference in stamps
-	await (new Promise((resolve) => {
-		setTimeout(() => {
-			resolve();
-		}, checkTimeDelayMs);
-	}));
+	await delay(checkTimeDelayMs);
 	// Touch alpha so that it will have a different mtime value
-	tstHelpers.touchFileSync(testFiles.alpha, true);
+	touchFileSync(testFiles.alpha, true);
 	// Now run full process - get stamps, save to file, etc.
 	/**
-	 * @type {InputOptions}
+	 * @type {import('../src/types').InputOptions}
 	 */
 	const dummyOptions = {
 		projectRootPath: tempDirPath,
@@ -124,7 +112,7 @@ test('main - integration test - git pre commit', async t => {
 	const result = await main.getStamps(dummyOptions);
 	perfTimings.preCommit.stop = (new Date()).getTime();
 	// Now the cache file should be *staged* but **not** committed, since we used `pre`
-	t.falsy(tstHelpers.wasLastCommitAutoAddCache(tempDirPath, cacheFileName));
+	t.falsy(wasLastCommitAutoAddCache(tempDirPath, cacheFileName));
 	// Check that actual numbers came back for stamps
 	const alphaStamp = result['alpha.txt'];
 	t.true(typeof (alphaStamp.created) === 'number');
@@ -155,20 +143,18 @@ test('main - integration test - git pre commit', async t => {
 		// Check time difference in stamps. Note that both modified and created stamps should be based off file stat, since no git history has been created
 		const timeDelay = Number(alphaStamp.modified) - Number(alphaStamp.created);
 		const timeDiff = Math.abs((Math.floor(checkTimeDelayMs / 1000)) - timeDelay);
-		t.true(timeDiff <= maxTimeVarianceSec, `Diff between created and modified should have been ${Math.floor(checkTimeDelayMs / 1000)}, but was ${timeDelay}. This variance of ${timeDiff} is beyond the accepted variance of ${maxTimeVarianceSec}.`);
+		t.true(timeDiff <= maxTimeVarianceSec, `Diff between created and modified should have been ${Math.floor(checkTimeDelayMs / 1000)}, but was ${timeDelay}. This variance of ${timeDiff} is beyond the accepted variance of ${maxTimeVarianceSec} (In ${tempDirPath}).`);
 	}
 });
 
 // Teardown dir and files
-test.serial.after.always(async () => {
-	for (const key in perfTimings) {
+test.after.always(async () => {
+	for (const k in perfTimings) {
+		const key = /** @type {keyof typeof perfTimings} */ (k);
 		perfTimings[key].elapsed = perfTimings[key].stop - perfTimings[key].start;
 	}
 	iDebugLog(perfTimings);
-	const dirNames = Object.keys(tempDirNames).map(key => tempDirNames[key]);
-	for (let x = 0; x < dirNames.length; x++) {
-		const tempDirPath = posixNormalize(__dirname + '/' + dirNames[x]);
-		// eslint-disable-next-line no-await-in-loop
-		await tstHelpers.removeTestDir(tempDirPath);
-	}
+	await Promise.all(tempDirPaths.map(p => {
+		return fse.remove(p);
+	}));
 });

@@ -1,16 +1,17 @@
-type GitCommitHook = "pre" | "post" | "none";
+export type GitCommitHook = "pre" | "post" | "none";
 
-interface StampObject {
+export interface StampObject {
 	// the stamp of when the file was created
 	"created"?: number | boolean,
 	// the stamp of when the file was modified
 	"modified"?: number | boolean
 }
 
-interface StampCache {
+export interface StampCache {
 	[index:string]: StampObject
 }
-interface InputOptions {
+
+export interface InputOptions {
 	// Whether or not the timestamps should be saved to file
 	outputToFile?: boolean,
 	// the filename to save the timestamps to
@@ -26,14 +27,14 @@ interface InputOptions {
 	// Exception list of files that will override any blocks
 	allowFiles?: string[] | string,
 	// What triggered the execution
-	gitCommitHook?: GitCommitHook,
+	gitCommitHook?: string,
 	// Project root
 	projectRootPath?: string,
 	// Debug
 	debug?: boolean
 }
 
-interface FinalizedOptions {
+export interface FinalizedOptions {
 	outputToFile: boolean,
 	outputFileName?: string,
 	outputFileGitAdd?: boolean,
@@ -47,12 +48,8 @@ interface FinalizedOptions {
 	debug: boolean
 }
 
-interface DirListing {
+export interface DirListing {
 	[index: string]: string | DirListing;
 }
 
-declare namespace NodeJS {
-	interface Global {
-		calledViaCLI?: boolean;
-	}
-}
+export type UnpackedPromise<T> = T extends Promise<infer U> ? U : T;

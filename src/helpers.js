@@ -1,7 +1,3 @@
-/// <reference path="../types.d.ts"/>
-// @ts-check
-'use strict';
-
 const path = require('path');
 const childProc = require('child_process');
 const os = require('os');
@@ -20,9 +16,10 @@ const posixNormalize = function(filePath) {
 /**
  * Extract an array from a stringified array
  * @param {string} str - input string
- * @returns {array} - Array output
+ * @returns {string[]} - Array output
  */
 function extractArrFromStr(str) {
+	/** @type {string[]} */
 	let arr = [];
 	if (typeof (str) === 'string') {
 		// Test for input string resembling array
@@ -41,7 +38,7 @@ function extractArrFromStr(str) {
 /**
  * Internal options validator / modder
  * @param {object} input - Options object
- * @returns {FinalizedOptions} - The finalized, formatted options
+ * @returns {import('./types').FinalizedOptions} - The finalized, formatted options
  */
 function _validateOptions(input) {
 	const moddedOptions = JSON.parse(JSON.stringify(input));
@@ -56,14 +53,18 @@ function _validateOptions(input) {
 		// Remove trailing slashes
 		moddedOptions.projectRootPath = moddedOptions.projectRootPath.replace(/[\/\\]{0,2}$/, '');
 	}
-	moddedOptions.projectRootPathTrailingSlash = moddedOptions.projectRootPath + '/';
+	moddedOptions.projectRootPath = posixNormalize(moddedOptions.projectRootPath);
+	moddedOptions.projectRootPathTrailingSlash = posixNormalize(moddedOptions.projectRootPath + '/');
 	if (typeof (moddedOptions.outputToFile) !== 'boolean') {
 		moddedOptions.outputToFile = false;
 	}
 	if (moddedOptions.outputToFile) {
+		// Default outputFileName
 		if (typeof (moddedOptions.outputFileName) !== 'string' || moddedOptions.outputFileName.length === 0) {
 			moddedOptions.outputFileName = 'timestamps.json';
 		}
+	}
+	if (typeof moddedOptions.outputFileName === 'string') {
 		// Force outputFile (e.g. the cache file) to a full path if it is not
 		if (!path.isAbsolute(moddedOptions.outputFileName)) {
 			moddedOptions.outputFileName = posixNormalize(`${moddedOptions.projectRootPath}/${moddedOptions.outputFileName}`);
@@ -112,13 +113,13 @@ function _validateOptions(input) {
 
 /**
  * Validates input options and forces them to conform
- * @param {InputOptions} input - Options
- * @returns {FinalizedOptions} - The vaidated and formatted options
+ * @param {import('./types').InputOptions} input - Options
+ * @returns {import('./types').FinalizedOptions} - The vaidated and formatted options
  */
 function validateOptions(input) {
 	const moddedOptions = _validateOptions(input);
 	/**
-	 * @type {FinalizedOptions}
+	 * @type {import('./types').FinalizedOptions}
 	 */
 	const finalOptions = {
 		outputToFile: moddedOptions.outputToFile,
@@ -138,11 +139,12 @@ function validateOptions(input) {
 
 /**
  * Run a replacer function over an object to modify it
- * @param {object} inputObj - the object to replace values in
- * @param {function} replacerFunc - cb func to take value, modify, and return it
- * @returns {object} - Object with replacements
+ * @param {{[k: string]: any}} inputObj - the object to replace values in
+ * @param {(input: any) => any} replacerFunc - cb func to take value, modify, and return it
+ * @returns {{[k: string]: any}} - Object with replacements
  */
 function replaceInObj(inputObj, replacerFunc) {
+	/** @type {{[k: string]: any}} */
 	const outputObj = {};
 	for (let x = 0; x < Object.keys(inputObj).length; x++) {
 		const key = Object.keys(inputObj)[x];
@@ -243,8 +245,8 @@ function getHighest(numArr) {
 
 /**
  * Get the highest and lowest stamps from FS Stats
- * @param {object} stats - FS Stats object
- * @returns {object} - Highest and lowest points
+ * @param {import('fs').Stats} stats - FS Stats object
+ * @returns {{lowestMs: number, highestMs: number}} - Highest and lowest points
  */
 function getEndOfRangeFromStat(stats) {
 	const lowestMs = getLowest([
@@ -276,10 +278,11 @@ function getEndOfRangeFromStat(stats) {
  * Get the birth times of a file
  * @param {string} filePath - The filepath of the file to get birth of
  * @param {boolean} [preferNative] - Prefer using Node FS - don't try for debugfs
- * @param {object} [OPT_fsStats] - Stats object, if you already have it ready
+ * @param {import('fs-extra').Stats} [OPT_fsStats] - Stats object, if you already have it ready
  * @returns {Promise<BirthStamps>} - Birth stamps
  */
 async function getFsBirth(filePath, preferNative, OPT_fsStats) {
+	/** @type {BirthStamps} */
 	const birthStamps = {
 		birthtime: null,
 		birthtimeMs: null,
@@ -307,12 +310,10 @@ async function getFsBirth(filePath, preferNative, OPT_fsStats) {
 		try {
 			// Grab inode number, and device
 			const inode = fsStats.ino;
-			const fullStatStr = (await execPromise(`stat ${filePath}`)).toString();
+			const fullStatStr = await execPromise(`stat ${filePath}`);
 			const deviceStr = /Device:\s{0,1}([a-zA-Z0-9\/]+)/.exec(fullStatStr)[1];
 			// Make call to debugfs
-			const debugFsInfo = (await execPromise(`debugfs -R 'stat <${inode}> --format=%W' ${deviceStr}`, {
-				stdio: 'pipe'
-			})).toString();
+			const debugFsInfo = await execPromise(`debugfs -R 'stat <${inode}> --format=%W' ${deviceStr}`);
 			// Parse for timestamp
 			const birthTimeSec = parseInt(debugFsInfo, 10);
 			if (!Number.isNaN(birthTimeSec) && birthTimeSec !== 0) {
@@ -418,8 +419,8 @@ function getKernelInfo() {
 /**
  * Promise wrapper around child_process exec
  * @param {string} cmdStr - Command to execute
- * @param {any} [options] - Exec options
- * @returns {Promise<Buffer>} - Stdout buffer
+ * @param {import('child_process').ExecOptions} [options] - Exec options
+ * @returns {Promise<string>} - Stdout string
  */
 function execPromise(cmdStr, options) {
 	return new Promise((resolve, reject) => {
@@ -431,6 +432,50 @@ function execPromise(cmdStr, options) {
 			resolve(stdout);
 		});
 	});
+}
+
+/**
+ * Promise wrapper around child_process.spawn
+ * @param {string} cmdStr
+ * @param {string[]} [args]
+ * @param {import('child_process').SpawnOptions} [options]
+ * @returns {Promise<string>} stdout
+ */
+function spawnPromise(cmdStr, args, options) {
+	return new Promise((resolve, reject) => {
+		let out = '';
+		const spawned = childProc.spawn(cmdStr, args, options);
+		spawned.stdout.on('data', data => {
+			out += data.toString();
+		});
+		spawned.stderr.on('data', data => {
+			out += data.toString();
+		});
+		spawned.on('error', reject);
+		spawned.on('close', (exitCode) => {
+			if (exitCode === 0) {
+				resolve(out);
+			} else {
+				reject(out);
+			}
+		});
+	});
+}
+
+/**
+ * Get return value of a promise, with a default value, in case it falls
+ * @param {Promise<any>} promise
+ * @param {any} [defaultVal]
+ */
+async function failSafePromise(promise, defaultVal = null) {
+	let res = defaultVal;
+	try {
+		res = await promise;
+	// eslint-disable-next-line no-unused-vars
+	} catch (error) {
+		// Ignore
+	}
+	return res;
 }
 
 /**
@@ -452,7 +497,7 @@ function statPromise(filePath) {
 
 /**
  * Replaces any root level values on an object that are 0, with a different value
- * @param {object} inputObj  - The object to replace zeros on
+ * @param {{[k: string]: any}} inputObj  - The object to replace zeros on
  * @param {any} replacement - what to replace the zeros with
  * @returns {object} The object with zeros replaced
  */
@@ -499,7 +544,6 @@ function getIsRelativePath(filePath) {
 // @todo this is probably going to need to be revised
 let projectRootPath = isInNodeModules() ? posixNormalize(path.normalize(`${__dirname}/../..`)) : posixNormalize(`${__dirname}`);
 const callerDir = posixNormalize(process.cwd());
-/* istanbul ignore if */
 if (projectRootPath.includes(posixNormalize(__dirname)) || projectRootPath.includes(callerDir) || global.calledViaCLI) {
 	projectRootPath = callerDir;
 }
@@ -525,5 +569,7 @@ module.exports = {
 	getKernelInfo,
 	getSemverInfo,
 	execPromise,
-	statPromise
+	spawnPromise,
+	statPromise,
+	failSafePromise
 };
