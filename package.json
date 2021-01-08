@@ -1,6 +1,6 @@
 {
 	"name": "git-date-extractor",
-	"version": "4.0.0",
+	"version": "4.0.1",
 	"description": "Easily extract file dates based on git history, and optionally cache in a easy to parse JSON file.",
 	"license": "MIT",
 	"repository": {

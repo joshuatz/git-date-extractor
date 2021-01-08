@@ -10,7 +10,8 @@
 		"noImplicitAny": true,
 		"esModuleInterop": true,
 		"target": "es2018",
-		"lib": ["es2018"]
+		"lib": ["es2018"],
+		"newLine": "lf"
 	},
 	"include": [
 		"*.d.ts",
