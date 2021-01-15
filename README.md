@@ -1,4 +1,4 @@
-# git-date-extractor [![Build Status](https://travis-ci.org/joshuatz/git-date-extractor.svg?branch=main)](https://travis-ci.org/github/joshuatz/git-date-extractor) [![codecov](https://codecov.io/gh/joshuatz/git-date-extractor/badge.svg?branch=main)](https://codecov.io/gh/joshuatz/git-date-extractor?branch=main)  [![npm](https://img.shields.io/npm/v/git-date-extractor)](https://www.npmjs.com/package/git-date-extractor)
+# git-date-extractor [![Build Status](https://travis-ci.org/joshuatz/git-date-extractor.svg?branch=main)](https://travis-ci.org/github/joshuatz/git-date-extractor) [![codecov](https://codecov.io/gh/joshuatz/git-date-extractor/badge.svg?branch=main)](https://codecov.io/gh/joshuatz/git-date-extractor?branch=main)  [![npm](https://img.shields.io/npm/v/git-date-extractor)](https://www.npmjs.com/package/git-date-extractor) [![demos](https://img.shields.io/badge/demos-github-informational)](https://github.com/joshuatz/git-date-extractor-demos)
 
 > Easily extract file dates based on git history, and optionally cache in a easy to parse JSON file.
 
@@ -11,6 +11,8 @@ I made this tool because, in trying to set up an automated static site deploymen
 Essentially, this is a way to run a command and get back a list of `created` and `modified` timestamps based on `git` history, regardless of when the files were actually created on your computer.
 
 It can run as either a CLI tool, or via JS, and returns an easy to parse JSON object with filenames as the key, and UNIX timestamps for created/modified times as the values.
+
+> Demo repo: [joshuatz/git-date-extractor-demos](https://github.com/joshuatz/git-date-extractor-demos)
 
 ## Quick Demo (CLI Usage):
 
@@ -200,6 +202,9 @@ Here is how I have this setup as a pre-commit hook. This is a little over-compli
 # Get list of changed files - everything but "deletes"
 git diff --cached --name-only --diff-filter=ACMRTUXB -z | xargs -0 git-date-extractor --gitCommitHook=pre --onlyIn=[md,images] --allowFiles=[README.md] --outputToFile=true --outputFileName=timestamps-cache.json
 ```
+
+### Integrating into a Static Site Generator
+See [my demo repo](https://github.com/joshuatz/git-date-extractor-demos) for a demo that uses this tool with GatsbyJS.
 
 ## Portfolio / Project Page
 https://joshuatz.com/projects/applications/git-date-extractor-npm-package-and-cli-tool/
