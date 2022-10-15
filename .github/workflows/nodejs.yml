@@ -33,6 +33,6 @@ jobs:
       - name: Run lint and tests
         run: npm run test
       - name: Collect / generate code coverage reporting
-        uses: ./node_modules/.bin/nyc report --reporter=text-lcov
+        run: npx --no-install nyc report --reporter=text-lcov
       - name: Upload code coverage reporting
         uses: codecov/codecov-action@v3
