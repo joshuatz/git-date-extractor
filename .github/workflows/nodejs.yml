@@ -20,7 +20,10 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          # NOTE: This repo currently lacks a lockfile (e.g. `package-lock.json` file), which is why the below line is commented out
+          # this is for reasons roughly enumerated here - https://docs.joshuatz.com/cheatsheets/node-and-npm/npm-general/#including-the-lockfile
+          # If a lockfile is ever added, this should be uncommented to speed up setup
+          # cache: 'npm'
       - name: Install dependencies
         run: npm install
       - name: Run lint and tests
