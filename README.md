@@ -1,4 +1,8 @@
-# git-date-extractor [![Build Status](https://travis-ci.org/joshuatz/git-date-extractor.svg?branch=main)](https://travis-ci.org/github/joshuatz/git-date-extractor) [![codecov](https://codecov.io/gh/joshuatz/git-date-extractor/badge.svg?branch=main)](https://codecov.io/gh/joshuatz/git-date-extractor?branch=main)  [![npm](https://img.shields.io/npm/v/git-date-extractor)](https://www.npmjs.com/package/git-date-extractor) [![demos](https://img.shields.io/badge/demos-github-informational)](https://github.com/joshuatz/git-date-extractor-demos)
+# git-date-extractor
+[![Build Status](https://github.com/joshuatz/git-date-extractor/actions/workflows/nodejs.yml/badge.svg)](https://github.com/joshuatz/git-date-extractor/tree/main/.github/workflows/nodejs.yml)
+[![codecov](https://codecov.io/gh/joshuatz/git-date-extractor/badge.svg?branch=main)](https://codecov.io/gh/joshuatz/git-date-extractor?branch=main)
+[![npm](https://img.shields.io/npm/v/git-date-extractor)](https://www.npmjs.com/package/git-date-extractor)
+[![demos](https://img.shields.io/badge/demos-github-informational)](https://github.com/joshuatz/git-date-extractor-demos)
 
 > Easily extract file dates based on git history, and optionally cache in a easy to parse JSON file.
 

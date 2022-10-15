@@ -1,0 +1,38 @@
+name: Node.js CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [10.x, 12.x, 14.x]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          # NOTE: This repo currently lacks a lockfile (e.g. `package-lock.json` file), which is why the below line is commented out
+          # this is for reasons roughly enumerated here - https://docs.joshuatz.com/cheatsheets/node-and-npm/npm-general/#including-the-lockfile
+          # If a lockfile is ever added, this should be uncommented to speed up setup
+          # cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Configure git for use with tests
+        run: |
+          git config --global user.name "GitHub Actions Tester"
+          git config --global user.email "noop@example.com"
+      - name: Run lint and tests
+        run: npm run test
+      - name: Collect / generate code coverage reporting
+        run: npx --no-install nyc report --reporter=text-lcov
+      - name: Upload code coverage reporting
+        uses: codecov/codecov-action@v3
