@@ -26,6 +26,10 @@ jobs:
           # cache: 'npm'
       - name: Install dependencies
         run: npm install
+      - name: Configure git for use with tests
+        run: |
+          git config --global user.name "GitHub Actions Tester"
+          git config --global user.email "noop@example.com"
       - name: Run lint and tests
         run: npm run test
       - name: Collect / generate code coverage reporting
